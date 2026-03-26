@@ -6,7 +6,7 @@ workflows:
       flutter: stable
     scripts:
       - name: Clean project 
-        script: | flutter clean rm -rf android/.gradle rm -rf ~/.gradle/caches
+        script: flutter clean rm -rf android/.gradle rm -rf ~/.gradle/caches
       - name: Get packages
         script: flutter pub get
       - name: Build APK
