@@ -1,13 +1,23 @@
 workflows:
-  android-release:
-    name: Android APK
-    max_build_duration: 30
-    environment:
-      flutter: stable
-    scripts:
-      - name: Get packages
-        script: flutter pub get
-      - name: Build APK
-        script: flutter build apk --release --split-per-abi
-    artifacts:
-      - build/app/outputs/flutter-apk/*.apk
+android-release:
+name: Android APK
+max_build_duration: 30
+
+environment:
+  flutter: stable
+
+scripts:
+  - name: Clean project
+    script: |
+      flutter clean
+      rm -rf android/.gradle
+      rm -rf ~/.gradle/caches
+
+  - name: Get packages
+    script: flutter pub get
+
+  - name: Build APK
+    script: flutter build apk --release --split-per-abi
+
+artifacts:
+  - build/app/outputs/flutter-apk/*.apk
