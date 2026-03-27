@@ -33,7 +33,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   double _atual = 0;
   double _meta = 500;
   List<Map<String, dynamic>> _viagens = [];
@@ -44,13 +44,29 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _load();
-    _checkOverlay();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Chamado quando o app volta pro foreground (ex: após dar permissão)
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkOverlay();
+    }
   }
 
   Future<void> _checkOverlay() async {
-    final active = await FlutterOverlayWindow.isActive();
-    if (mounted) setState(() => _overlayActive = active);
+    try {
+      final active = await FlutterOverlayWindow.isActive();
+      if (mounted) setState(() => _overlayActive = active);
+    } catch (_) {}
   }
 
   Future<void> _load() async {
@@ -69,7 +85,11 @@ class _HomePageState extends State<HomePage> {
     await prefs.setDouble('meta', _meta);
     await prefs.setString('viagens', jsonEncode(_viagens));
     try {
-      FlutterOverlayWindow.shareData({'atual': _atual, 'meta': _meta, 'viagens': _viagens.length});
+      FlutterOverlayWindow.shareData({
+        'atual': _atual,
+        'meta': _meta,
+        'viagens': _viagens.length,
+      });
     } catch (_) {}
   }
 
@@ -146,14 +166,17 @@ class _HomePageState extends State<HomePage> {
     try {
       final granted = await FlutterOverlayWindow.isPermissionGranted();
       if (!granted) {
+        _showSnack('Abrindo configurações — ative "Exibir sobre outros apps" e volte ao app.');
+        await Future.delayed(const Duration(seconds: 2));
         await FlutterOverlayWindow.requestPermission();
-        _showSnack('Ative a permissão "Exibir sobre outros apps" e tente de novo.');
         return;
       }
+
       final active = await FlutterOverlayWindow.isActive();
       if (active) {
         await FlutterOverlayWindow.closeOverlay();
         setState(() => _overlayActive = false);
+        _showSnack('Widget flutuante desativado.');
       } else {
         await FlutterOverlayWindow.showOverlay(
           enableDrag: true,
@@ -162,12 +185,17 @@ class _HomePageState extends State<HomePage> {
           flag: OverlayFlag.defaultFlag,
           visibility: NotificationVisibility.visibilityPublic,
           positionGravity: PositionGravity.auto,
-          width: 320,
-          height: WindowSize.matchParent,
+          width: WindowSize.matchParent,
+          height: 110,
         );
-        await Future.delayed(const Duration(milliseconds: 400));
-        FlutterOverlayWindow.shareData({'atual': _atual, 'meta': _meta, 'viagens': _viagens.length});
+        await Future.delayed(const Duration(milliseconds: 500));
+        FlutterOverlayWindow.shareData({
+          'atual': _atual,
+          'meta': _meta,
+          'viagens': _viagens.length,
+        });
         setState(() => _overlayActive = true);
+        _showSnack('Widget flutuante ativado! Minimize o app para vê-lo.');
       }
     } catch (e) {
       _showSnack('Erro: $e');
@@ -194,9 +222,11 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Meta Viagem', style: TextStyle(fontWeight: FontWeight.w500)),
         actions: [
           IconButton(
-            icon: Icon(_overlayActive ? Icons.picture_in_picture : Icons.picture_in_picture_outlined,
-                color: const Color(0xFF1D9E75)),
-            tooltip: _overlayActive ? 'Fechar flutuante' : 'Ativar flutuante',
+            icon: Icon(
+              _overlayActive ? Icons.picture_in_picture : Icons.picture_in_picture_outlined,
+              color: _overlayActive ? const Color(0xFF1D9E75) : Colors.black45,
+            ),
+            tooltip: _overlayActive ? 'Desativar flutuante' : 'Ativar flutuante',
             onPressed: _toggleOverlay,
           ),
         ],
@@ -257,8 +287,7 @@ class _HomePageState extends State<HomePage> {
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black54)),
               const SizedBox(height: 10),
               ..._viagens.reversed.take(30).toList().asMap().entries.map((e) {
-                final reversedIdx = e.key;
-                final originalIndex = _viagens.length - 1 - reversedIdx;
+                final originalIndex = _viagens.length - 1 - e.key;
                 final v = e.value;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 6),
@@ -279,8 +308,7 @@ class _HomePageState extends State<HomePage> {
                       onTap: () => _removeViagem(originalIndex),
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                            color: const Color(0xFFFAECE7), borderRadius: BorderRadius.circular(6)),
+                        decoration: BoxDecoration(color: const Color(0xFFFAECE7), borderRadius: BorderRadius.circular(6)),
                         child: const Icon(Icons.close, size: 14, color: Color(0xFF993C1D)),
                       ),
                     ),
@@ -295,10 +323,8 @@ class _HomePageState extends State<HomePage> {
 
   Widget _card(Widget child) => Container(
     padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white, borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: Colors.black12, width: 0.5),
-    ),
+    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.black12, width: 0.5)),
     child: child,
   );
 
@@ -344,7 +370,7 @@ class _HomePageState extends State<HomePage> {
     );
 }
 
-// ─── OVERLAY FLUTUANTE ───────────────────────────────────────────────────────
+// ─── OVERLAY FLUTUANTE — barra compacta ──────────────────────────────────────
 
 class OverlayWidget extends StatefulWidget {
   const OverlayWidget({super.key});
@@ -356,7 +382,6 @@ class _OverlayWidgetState extends State<OverlayWidget> {
   double _atual = 0;
   double _meta = 500;
   int _viagens = 0;
-  bool _expanded = false;
 
   @override
   void initState() {
@@ -382,91 +407,67 @@ class _OverlayWidgetState extends State<OverlayWidget> {
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         backgroundColor: Colors.transparent,
-        body: GestureDetector(
-          onTap: () => setState(() => _expanded = !_expanded),
-          child: _expanded ? _expandedPanel() : _miniIcon(),
+        body: SafeArea(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 12, offset: const Offset(0, 3))
+              ],
+            ),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              // Linha superior: saldo + viagens + botão fechar
+              Row(children: [
+                Text(_fmt(_atual),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF1D9E75))),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(color: const Color(0xFFE1F5EE), borderRadius: BorderRadius.circular(99)),
+                  child: Text('$_viagens viagens',
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: Color(0xFF0F6E56))),
+                ),
+                const Spacer(),
+                Text(
+                  _falta <= 0 ? 'Meta atingida!' : 'falta ${_fmt(_falta)}',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
+                      color: _falta <= 0 ? const Color(0xFF1D9E75) : const Color(0xFF993C1D)),
+                ),
+                const SizedBox(width: 8),
+                // Botão fechar sobreposição
+                GestureDetector(
+                  onTap: () async => await FlutterOverlayWindow.closeOverlay(),
+                  child: Container(
+                    width: 24, height: 24,
+                    decoration: BoxDecoration(color: const Color(0xFFF1EFE8), borderRadius: BorderRadius.circular(99)),
+                    child: const Icon(Icons.close, size: 14, color: Colors.black45),
+                  ),
+                ),
+              ]),
+              const SizedBox(height: 8),
+              // Barra de progresso
+              ClipRRect(
+                borderRadius: BorderRadius.circular(99),
+                child: LinearProgressIndicator(
+                  value: _pct, minHeight: 8,
+                  backgroundColor: const Color(0xFFEEEEEE),
+                  color: const Color(0xFF1D9E75),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text('${(_pct * 100).toStringAsFixed(0)}%',
+                    style: const TextStyle(fontSize: 10, color: Color(0xFF1D9E75), fontWeight: FontWeight.w500)),
+                Text('Meta: ${_fmt(_meta)}',
+                    style: const TextStyle(fontSize: 10, color: Colors.black38)),
+              ]),
+            ]),
+          ),
         ),
       ),
     );
   }
-
-  Widget _miniIcon() => Align(
-    alignment: Alignment.centerRight,
-    child: Container(
-      width: 60, height: 60,
-      decoration: BoxDecoration(
-        color: const Color(0xFF1D9E75), shape: BoxShape.circle,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 8, offset: const Offset(0, 3))],
-      ),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        const Icon(Icons.directions_car, color: Colors.white, size: 18),
-        Text('${(_pct * 100).toStringAsFixed(0)}%',
-            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w500)),
-      ]),
-    ),
-  );
-
-  Widget _expandedPanel() => Align(
-    alignment: Alignment.centerRight,
-    child: Container(
-      width: 300,
-      margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white, borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.18), blurRadius: 16, offset: const Offset(0, 4))],
-      ),
-      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          const Text('Meta Viagem',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.black45, letterSpacing: 0.5)),
-          GestureDetector(
-            onTap: () => setState(() => _expanded = false),
-            child: const Icon(Icons.keyboard_arrow_down, size: 18, color: Colors.black38),
-          ),
-        ]),
-        const SizedBox(height: 10),
-        Row(children: [
-          Text(_fmt(_atual), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500, color: Color(0xFF1D9E75))),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(color: const Color(0xFFE1F5EE), borderRadius: BorderRadius.circular(99)),
-            child: Text('$_viagens viagens',
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF0F6E56))),
-          ),
-        ]),
-        const SizedBox(height: 4),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('Meta: ${_fmt(_meta)}', style: const TextStyle(fontSize: 12, color: Colors.black45)),
-          Text(
-            _falta <= 0 ? 'Atingida!' : 'falta ${_fmt(_falta)}',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
-                color: _falta <= 0 ? const Color(0xFF1D9E75) : const Color(0xFF993C1D)),
-          ),
-        ]),
-        const SizedBox(height: 10),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(99),
-          child: LinearProgressIndicator(value: _pct, minHeight: 8,
-              backgroundColor: const Color(0xFFEEEEEE), color: const Color(0xFF1D9E75)),
-        ),
-        const SizedBox(height: 6),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('${(_pct * 100).toStringAsFixed(0)}%',
-              style: const TextStyle(fontSize: 11, color: Color(0xFF1D9E75), fontWeight: FontWeight.w500)),
-          Text(_fmt(_meta), style: const TextStyle(fontSize: 11, color: Colors.black38)),
-        ]),
-        const SizedBox(height: 10),
-        GestureDetector(
-          onTap: () async => await FlutterOverlayWindow.closeOverlay(),
-          child: Container(
-            width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(border: Border.all(color: Colors.black12, width: 0.5), borderRadius: BorderRadius.circular(8)),
-            child: const Center(child: Text('Fechar widget', style: TextStyle(fontSize: 13, color: Colors.black54))),
-          ),
-        ),
-      ]),
-    ),
-  );
 }
