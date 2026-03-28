@@ -54,7 +54,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  // Chamado quando o app volta pro foreground (ex: após dar permissão)
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
@@ -166,7 +165,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     try {
       final granted = await FlutterOverlayWindow.isPermissionGranted();
       if (!granted) {
-        _showSnack('Abrindo configurações — ative "Exibir sobre outros apps" e volte ao app.');
+        _showSnack('Abrindo configurações — ative "Exibir sobre outros apps" e volte.');
         await Future.delayed(const Duration(seconds: 2));
         await FlutterOverlayWindow.requestPermission();
         return;
@@ -182,20 +181,21 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           enableDrag: true,
           overlayTitle: 'Meta Viagem',
           overlayContent: 'Widget ativo',
-          flag: OverlayFlag.defaultFlag,
+          flag: OverlayFlag.focusPointer,   // <-- mantém overlay mesmo com app em background
           visibility: NotificationVisibility.visibilityPublic,
           positionGravity: PositionGravity.auto,
           width: WindowSize.matchParent,
           height: 110,
+          startPosition: const OverlayPosition(0, -200),
         );
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future.delayed(const Duration(milliseconds: 600));
         FlutterOverlayWindow.shareData({
           'atual': _atual,
           'meta': _meta,
           'viagens': _viagens.length,
         });
         setState(() => _overlayActive = true);
-        _showSnack('Widget flutuante ativado! Minimize o app para vê-lo.');
+        _showSnack('Widget ativado! Agora minimize o app.');
       }
     } catch (e) {
       _showSnack('Erro: $e');
@@ -370,7 +370,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     );
 }
 
-// ─── OVERLAY FLUTUANTE — barra compacta ──────────────────────────────────────
+// ─── OVERLAY FLUTUANTE ────────────────────────────────────────────────────────
 
 class OverlayWidget extends StatefulWidget {
   const OverlayWidget({super.key});
@@ -415,11 +415,10 @@ class _OverlayWidgetState extends State<OverlayWidget> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 12, offset: const Offset(0, 3))
+                BoxShadow(color: Colors.black.withOpacity(0.18), blurRadius: 12, offset: const Offset(0, 3))
               ],
             ),
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-              // Linha superior: saldo + viagens + botão fechar
               Row(children: [
                 Text(_fmt(_atual),
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF1D9E75))),
@@ -437,7 +436,6 @@ class _OverlayWidgetState extends State<OverlayWidget> {
                       color: _falta <= 0 ? const Color(0xFF1D9E75) : const Color(0xFF993C1D)),
                 ),
                 const SizedBox(width: 8),
-                // Botão fechar sobreposição
                 GestureDetector(
                   onTap: () async => await FlutterOverlayWindow.closeOverlay(),
                   child: Container(
@@ -448,7 +446,6 @@ class _OverlayWidgetState extends State<OverlayWidget> {
                 ),
               ]),
               const SizedBox(height: 8),
-              // Barra de progresso
               ClipRRect(
                 borderRadius: BorderRadius.circular(99),
                 child: LinearProgressIndicator(
