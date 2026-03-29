@@ -313,7 +313,7 @@ class _HojeTabState extends State<HojeTab> {
         Row(children: [
           _statCard('Saldo bruto', _fmt(_atual), const Color(0xFF1D9E75)),
           const SizedBox(width: 6),
-          _statCard('Abastec.', _abast > 0 ? '-${_fmt(_abast)}' : 'R$ 0,00', const Color(0xFF993C1D)),
+          _statCard('Abastec.', _abast > 0 ? '-${_fmt(_abast)}' : 'R\$ 0,00', const Color(0xFF993C1D)),
           const SizedBox(width: 6),
           _statCard('Líquido', _fmt(_liquido.clamp(0, double.infinity)), const Color(0xFF185FA5)),
           const SizedBox(width: 6),
