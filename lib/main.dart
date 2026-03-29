@@ -1,17 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_overlay_window/flutter_overlay_window.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const MetaViagemApp());
-}
-
-@pragma("vm:entry-point")
-void overlayMain() {
-  WidgetsFlutterBinding.ensureInitialized();
-  runApp(const OverlayWidget());
 }
 
 class MetaViagemApp extends StatelessWidget {
@@ -21,6 +15,8 @@ class MetaViagemApp extends StatelessWidget {
     title: 'Meta Viagem',
     debugShowCheckedModeBanner: false,
     theme: ThemeData(colorSchemeSeed: const Color(0xFF1D9E75), useMaterial3: true),
+    localizationsDelegates: GlobalMaterialLocalizations.delegates,
+    supportedLocales: const [Locale('pt', 'BR'), Locale('en')],
     home: const RootPage(),
   );
 }
@@ -33,31 +29,14 @@ class RootPage extends StatefulWidget {
   State<RootPage> createState() => _RootPageState();
 }
 
-class _RootPageState extends State<RootPage> with WidgetsBindingObserver {
+class _RootPageState extends State<RootPage> {
   int _tab = 0;
   double _atual = 0, _meta = 500, _abastecimento = 0;
   List<Map<String, dynamic>> _viagens = [];
   List<Map<String, dynamic>> _dias = [];
-  bool _overlayActive = false;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _load();
-  }
-
-  @override
-  void dispose() { WidgetsBinding.instance.removeObserver(this); super.dispose(); }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState s) {
-    if (s == AppLifecycleState.resumed) _checkOverlay();
-  }
-
-  Future<void> _checkOverlay() async {
-    try { final a = await FlutterOverlayWindow.isActive(); if (mounted) setState(() => _overlayActive = a); } catch (_) {}
-  }
+  void initState() { super.initState(); _load(); }
 
   Future<void> _load() async {
     final p = await SharedPreferences.getInstance();
@@ -77,7 +56,6 @@ class _RootPageState extends State<RootPage> with WidgetsBindingObserver {
     await p.setDouble('abastecimento', _abastecimento);
     await p.setString('viagens', jsonEncode(_viagens));
     await p.setString('dias', jsonEncode(_dias));
-    try { FlutterOverlayWindow.shareData({'atual': _atual, 'meta': _meta, 'viagens': _viagens.length}); } catch (_) {}
   }
 
   void _onHojeChanged(double atual, double meta, double abast, List<Map<String, dynamic>> viagens) {
@@ -90,28 +68,6 @@ class _RootPageState extends State<RootPage> with WidgetsBindingObserver {
     _save();
   }
 
-  Future<void> _toggleOverlay() async {
-    try {
-      if (!await FlutterOverlayWindow.isPermissionGranted()) {
-        await FlutterOverlayWindow.requestPermission(); return;
-      }
-      final active = await FlutterOverlayWindow.isActive();
-      if (active) {
-        await FlutterOverlayWindow.closeOverlay(); setState(() => _overlayActive = false);
-      } else {
-        await FlutterOverlayWindow.showOverlay(
-          enableDrag: true, overlayTitle: 'Meta Viagem', overlayContent: 'Widget ativo',
-          flag: OverlayFlag.focusPointer, visibility: NotificationVisibility.visibilityPublic,
-          positionGravity: PositionGravity.auto, width: WindowSize.matchParent, height: 110,
-          startPosition: const OverlayPosition(0, -200),
-        );
-        await Future.delayed(const Duration(milliseconds: 500));
-        FlutterOverlayWindow.shareData({'atual': _atual, 'meta': _meta, 'viagens': _viagens.length});
-        setState(() => _overlayActive = true);
-      }
-    } catch (_) {}
-  }
-
   @override
   Widget build(BuildContext context) {
     final tabs = ['Hoje', 'Diário', 'Resumo'];
@@ -120,11 +76,6 @@ class _RootPageState extends State<RootPage> with WidgetsBindingObserver {
       appBar: AppBar(
         backgroundColor: const Color(0xFFF5F5F0),
         title: const Text('Meta Viagem', style: TextStyle(fontWeight: FontWeight.w500)),
-        actions: [IconButton(
-          icon: Icon(_overlayActive ? Icons.picture_in_picture : Icons.picture_in_picture_outlined,
-              color: _overlayActive ? const Color(0xFF1D9E75) : Colors.black45),
-          onPressed: _toggleOverlay,
-        )],
       ),
       body: Column(children: [
         Padding(padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -176,6 +127,7 @@ class _HojeTabState extends State<HojeTab> {
   late double _atual, _meta, _abast;
   late List<Map<String, dynamic>> _viagens;
   bool _modoTotal = false;
+  // controllers
   final _corridaCtrl = TextEditingController();
   final _metaCtrl = TextEditingController();
   final _totalCtrl = TextEditingController();
@@ -184,9 +136,16 @@ class _HojeTabState extends State<HojeTab> {
   final _kmCtrl = TextEditingController();
   final _horasCtrl = TextEditingController();
   final _abastCtrl = TextEditingController();
+  // data selecionada para modo total
+  DateTime _dataTotalSelecionada = DateTime.now();
 
   @override
-  void initState() { super.initState(); _atual = widget.atual; _meta = widget.meta; _abast = widget.abastecimento; _viagens = List.from(widget.viagens); }
+  void initState() {
+    super.initState();
+    _atual = widget.atual; _meta = widget.meta; _abast = widget.abastecimento;
+    _viagens = List.from(widget.viagens);
+  }
+
   @override
   void didUpdateWidget(HojeTab old) {
     super.didUpdateWidget(old);
@@ -200,7 +159,7 @@ class _HojeTabState extends State<HojeTab> {
   String _fmt(double v) => 'R\$ ${v.toStringAsFixed(2).replaceAll('.', ',')}';
   double get _pct => _meta > 0 ? (_atual / _meta).clamp(0, 1) : 0;
   double get _falta => (_meta - _atual).clamp(0, double.infinity);
-  double get _liquido => _atual - _abast;
+  double get _liquido => (_atual - _abast).clamp(0, double.infinity);
   double get _media => _viagens.isEmpty ? 0 : _atual / _viagens.length;
 
   void _addViagem() {
@@ -246,61 +205,113 @@ class _HojeTabState extends State<HojeTab> {
     ));
   }
 
-  void _confirmarTotal() {
-    final total = double.tryParse(_totalCtrl.text.replaceAll(',', '.'));
-    final nVia = int.tryParse(_nViaCtrl.text.trim());
-    final metaVal = double.tryParse(_metaTotalCtrl.text.replaceAll(',', '.'));
-    if (total == null || total <= 0) { _showSnack('Informe o total ganho.'); return; }
-    if (nVia == null || nVia <= 0) { _showSnack('Informe o número de viagens.'); return; }
-    if (metaVal != null && metaVal > 0) setState(() => _meta = metaVal);
-    setState(() {
-      _atual = total;
-      _viagens = List.generate(nVia, (i) => {'val': total / nVia, 'hora': '—'});
-    });
-    _totalCtrl.clear(); _nViaCtrl.clear(); _metaTotalCtrl.clear();
-    _notify(); _showSnack('Total do dia registrado!');
+  Future<void> _selecionarData() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dataTotalSelecionada,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      locale: const Locale('pt', 'BR'),
+    );
+    if (picked != null) setState(() => _dataTotalSelecionada = picked);
   }
+
+  String _fmtData(DateTime d) =>
+      '${d.day.toString().padLeft(2,'0')}/${d.month.toString().padLeft(2,'0')}/${d.year}';
 
   void _encerrarDia() {
-    if (_viagens.isEmpty) { _showSnack('Adicione pelo menos uma viagem antes de encerrar.'); return; }
-    final km = double.tryParse(_kmCtrl.text.replaceAll(',', '.')) ?? 0;
-    final abastVal = double.tryParse(_abastCtrl.text.replaceAll(',', '.')) ?? 0;
-    double horas = 0;
-    final ht = _horasCtrl.text.trim();
-    if (ht.isNotEmpty) {
-      final c = ht.replaceAll('h', ':').replaceAll(',', '.');
-      if (c.contains(':')) { final p = c.split(':'); horas = (double.tryParse(p[0]) ?? 0) + (double.tryParse(p.length > 1 ? p[1] : '0') ?? 0) / 60; }
-      else { horas = double.tryParse(c) ?? 0; }
+    if (_modoTotal) {
+      // Modo total: valida campos e monta dia direto
+      final total = double.tryParse(_totalCtrl.text.replaceAll(',', '.'));
+      final nVia = int.tryParse(_nViaCtrl.text.trim());
+      if (total == null || total <= 0) { _showSnack('Informe o total ganho.'); return; }
+      if (nVia == null || nVia <= 0) { _showSnack('Informe o número de viagens.'); return; }
+      final metaVal = double.tryParse(_metaTotalCtrl.text.replaceAll(',', '.'));
+      if (metaVal != null && metaVal > 0) _meta = metaVal;
+
+      final km = double.tryParse(_kmCtrl.text.replaceAll(',', '.')) ?? 0;
+      final abastVal = double.tryParse(_abastCtrl.text.replaceAll(',', '.')) ?? 0;
+      double horas = _parseHoras(_horasCtrl.text.trim());
+      final totalAbast = abastVal;
+      final dt = _dataTotalSelecionada;
+
+      showDialog(context: context, builder: (_) => AlertDialog(
+        title: const Text('Encerrar o dia?'),
+        content: Text('Salvar ${_fmt(total)} em $nVia viagens em ${_fmtData(dt)}?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(onPressed: () {
+            widget.onEncerrarDia({
+              'data': _fmtData(dt),
+              'dataISO': dt.toIso8601String(),
+              'semana': _diaSemana(dt.weekday),
+              'total': total,
+              'meta': _meta,
+              'viagens': nVia,
+              'km': km,
+              'horas': horas,
+              'abastecimento': totalAbast,
+              'liquido': total - totalAbast,
+              'bateu': total >= _meta,
+              'modoTotal': true, // flag: não tem histórico individual
+            });
+            _totalCtrl.clear(); _nViaCtrl.clear(); _metaTotalCtrl.clear();
+            _kmCtrl.clear(); _horasCtrl.clear(); _abastCtrl.clear();
+            Navigator.pop(context);
+            _showSnack('Dia ${_fmtData(dt)} salvo no Diário!');
+          }, child: const Text('Encerrar', style: TextStyle(color: Color(0xFF1D9E75)))),
+        ],
+      ));
+    } else {
+      // Modo uma por uma
+      if (_viagens.isEmpty) { _showSnack('Adicione pelo menos uma viagem antes de encerrar.'); return; }
+      final km = double.tryParse(_kmCtrl.text.replaceAll(',', '.')) ?? 0;
+      final abastVal = double.tryParse(_abastCtrl.text.replaceAll(',', '.')) ?? 0;
+      double horas = _parseHoras(_horasCtrl.text.trim());
+      final totalAbast = _abast + abastVal;
+      final now = DateTime.now();
+
+      showDialog(context: context, builder: (_) => AlertDialog(
+        title: const Text('Encerrar o dia?'),
+        content: Text('Salvar ${_fmt(_atual)} em ${_viagens.length} viagens no Diário?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(onPressed: () {
+            widget.onEncerrarDia({
+              'data': _fmtData(now),
+              'dataISO': now.toIso8601String(),
+              'semana': _diaSemana(now.weekday),
+              'total': _atual,
+              'meta': _meta,
+              'viagens': _viagens.length,
+              'km': km,
+              'horas': horas,
+              'abastecimento': totalAbast,
+              'liquido': _atual - totalAbast,
+              'bateu': _atual >= _meta,
+              'modoTotal': false,
+              'historicoViagens': List.from(_viagens), // salva histórico individual
+            });
+            _kmCtrl.clear(); _horasCtrl.clear(); _abastCtrl.clear();
+            Navigator.pop(context);
+            _showSnack('Dia encerrado e salvo no Diário!');
+          }, child: const Text('Encerrar', style: TextStyle(color: Color(0xFF1D9E75)))),
+        ],
+      ));
     }
-    final totalAbast = _abast + abastVal;
-    showDialog(context: context, builder: (_) => AlertDialog(
-      title: const Text('Encerrar o dia?'),
-      content: Text('Salvar ${_fmt(_atual)} em ${_viagens.length} viagens no Diário?'),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-        TextButton(onPressed: () {
-          final now = DateTime.now();
-          widget.onEncerrarDia({
-            'data': '${now.day.toString().padLeft(2,'0')}/${now.month.toString().padLeft(2,'0')}/${now.year}',
-            'dataISO': now.toIso8601String(),
-            'semana': ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'][now.weekday - 1],
-            'total': _atual,
-            'meta': _meta,
-            'viagens': _viagens.length,
-            'km': km,
-            'horas': horas,
-            'abastecimento': totalAbast,
-            'liquido': _atual - totalAbast,
-            'bateu': _atual >= _meta,
-          });
-          _kmCtrl.clear(); _horasCtrl.clear(); _abastCtrl.clear();
-          Navigator.pop(context);
-          _showSnack('Dia encerrado e salvo no Diário!');
-        }, child: const Text('Encerrar', style: TextStyle(color: Color(0xFF1D9E75)))),
-      ],
-    ));
   }
 
+  double _parseHoras(String ht) {
+    if (ht.isEmpty) return 0;
+    final c = ht.replaceAll('h', ':').replaceAll(',', '.');
+    if (c.contains(':')) {
+      final p = c.split(':');
+      return (double.tryParse(p[0]) ?? 0) + (double.tryParse(p.length > 1 ? p[1] : '0') ?? 0) / 60;
+    }
+    return double.tryParse(c) ?? 0;
+  }
+
+  String _diaSemana(int w) => ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'][w - 1];
   void _showSnack(String msg) => ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(content: Text(msg), duration: const Duration(seconds: 3)));
 
@@ -315,7 +326,7 @@ class _HojeTabState extends State<HojeTab> {
           const SizedBox(width: 6),
           _statCard('Abastec.', _abast > 0 ? '-${_fmt(_abast)}' : 'R\$ 0,00', const Color(0xFF993C1D)),
           const SizedBox(width: 6),
-          _statCard('Líquido', _fmt(_liquido.clamp(0, double.infinity)), const Color(0xFF185FA5)),
+          _statCard('Líquido', _fmt(_liquido), const Color(0xFF185FA5)),
           const SizedBox(width: 6),
           _statCard('Viagens', '${_viagens.length}', Colors.black87),
         ]),
@@ -347,7 +358,6 @@ class _HojeTabState extends State<HojeTab> {
           const Align(alignment: Alignment.centerLeft,
             child: Text('Registrar viagens', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black54))),
           const SizedBox(height: 8),
-          // Toggle
           Container(
             decoration: BoxDecoration(color: const Color(0xFFEEEEEE), borderRadius: BorderRadius.circular(8)),
             padding: const EdgeInsets.all(3),
@@ -359,7 +369,6 @@ class _HojeTabState extends State<HojeTab> {
           const SizedBox(height: 10),
 
           if (!_modoTotal) ...[
-            // Modo uma por uma
             Row(children: [
               Expanded(child: _inputField(_corridaCtrl, 'Valor da viagem (R\$)', '18.50')),
               const SizedBox(width: 8),
@@ -374,21 +383,36 @@ class _HojeTabState extends State<HojeTab> {
               Expanded(child: _btn('Zerar', Colors.white, const Color(0xFF993C1D), _zerar, border: const Color(0xFFD85A30))),
             ]),
           ] else ...[
-            // Modo total do dia
+            // Seletor de data para modo total
+            GestureDetector(
+              onTap: _selecionarData,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F5F0),
+                  border: Border.all(color: Colors.black26, width: 0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF1D9E75)),
+                  const SizedBox(width: 8),
+                  Text(_fmtData(_dataTotalSelecionada),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black87)),
+                  const Spacer(),
+                  const Text('alterar', style: TextStyle(fontSize: 11, color: Colors.black38)),
+                ]),
+              ),
+            ),
+            const SizedBox(height: 8),
             Row(children: [
               Expanded(child: _inputField(_totalCtrl, 'Total ganho (R\$)', 'ex: 280.00')),
               const SizedBox(width: 8),
               Expanded(child: _inputField(_nViaCtrl, 'Nº de viagens', 'ex: 15')),
             ]),
             const SizedBox(height: 8),
-            Row(children: [
-              Expanded(child: _inputField(_metaTotalCtrl, 'Meta (R\$)', '500')),
-              const SizedBox(width: 8),
-              Expanded(child: Padding(padding: const EdgeInsets.only(top: 15),
-                child: _btn('Confirmar', const Color(0xFF1D9E75), Colors.white, _confirmarTotal))),
-            ]),
-            const SizedBox(height: 4),
-            const Text('preenche o saldo e viagens de uma vez',
+            _inputField(_metaTotalCtrl, 'Meta do dia (R\$)', '500'),
+            const SizedBox(height: 6),
+            const Text('os dados do expediente serão preenchidos na seção abaixo',
                 style: TextStyle(fontSize: 11, color: Colors.black38)),
           ],
         ])),
@@ -408,14 +432,11 @@ class _HojeTabState extends State<HojeTab> {
             Expanded(child: _inputField(_horasCtrl, 'Horas trabalhadas', 'ex: 8h30')),
           ]),
           const SizedBox(height: 8),
-          Row(children: [
-            Expanded(child: _inputField(_abastCtrl, 'Abastecimento (R\$)', 'ex: 80.00')),
-            const SizedBox(width: 8),
-            const Expanded(child: SizedBox()),
-          ]),
-          const SizedBox(height: 10),
+          SizedBox(width: MediaQuery.of(context).size.width / 2 - 20,
+            child: _inputField(_abastCtrl, 'Abastecimento (R\$)', 'ex: 80.00')),
+          const SizedBox(height: 12),
           Container(height: 0.5, color: Colors.black12),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           GestureDetector(
             onTap: _encerrarDia,
             child: Container(
@@ -431,12 +452,12 @@ class _HojeTabState extends State<HojeTab> {
         ])),
         const SizedBox(height: 12),
 
-        // Histórico
-        if (_viagens.isNotEmpty)
+        // Histórico (só no modo uma por uma)
+        if (!_modoTotal && _viagens.isNotEmpty)
           _card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               const Text('Viagens de hoje', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black54)),
-              Text('${_viagens.length} viagens · ${_fmt(_media)}/viagem',
+              Text('${_viagens.length} · ${_fmt(_media)}/viagem',
                   style: const TextStyle(fontSize: 11, color: Colors.black38)),
             ]),
             const SizedBox(height: 10),
@@ -529,7 +550,6 @@ class DiarioTab extends StatelessWidget {
     final batidas = dias.where((d) => d['bateu'] == true).length;
     final pct = (batidas / dias.length * 100).round();
     final kmTotal = dias.fold<double>(0, (s, d) => s + (d['km'] as num? ?? 0).toDouble());
-    final abastTotal = dias.fold<double>(0, (s, d) => s + (d['abastecimento'] as num? ?? 0).toDouble());
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -537,7 +557,7 @@ class DiarioTab extends StatelessWidget {
         Row(children: [
           _mini('dias', '${dias.length}', Colors.black87),
           const SizedBox(width: 6),
-          _mini('metas', '$batidas/${{dias.length}}', const Color(0xFF1D9E75)),
+          _mini('metas', '$batidas/${dias.length}', const Color(0xFF1D9E75)),
           const SizedBox(width: 6),
           _mini('aproveit.', '$pct%', const Color(0xFFBA7517)),
           const SizedBox(width: 6),
@@ -554,98 +574,175 @@ class DiarioTab extends StatelessWidget {
           final abast = (d['abastecimento'] as num? ?? 0).toDouble();
           final liquido = (d['liquido'] as num? ?? total).toDouble();
           final bateu = d['bateu'] as bool? ?? false;
+          final modoTotal = d['modoTotal'] as bool? ?? true;
+          final historico = d['historicoViagens'] as List?;
           final pctDia = meta > 0 ? (total / meta).clamp(0.0, 1.0) : 0.0;
           final ganhoH = horas > 0 ? total / horas : 0.0;
           final ganhoKm = km > 0 ? total / km : 0.0;
+          final temHistorico = !modoTotal && historico != null && historico.isNotEmpty;
 
           return Padding(padding: const EdgeInsets.only(bottom: 10),
-            child: Container(padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.black12, width: 0.5)),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(d['data'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                    Text(d['semana'] ?? '', style: const TextStyle(fontSize: 10, color: Colors.black38)),
-                  ]),
-                  Row(children: [
-                    Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                      decoration: BoxDecoration(
-                          color: bateu ? const Color(0xFFE1F5EE) : const Color(0xFFFAECE7),
-                          borderRadius: BorderRadius.circular(99)),
-                      child: Text(bateu ? 'Meta batida' : 'Não bateu',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
-                              color: bateu ? const Color(0xFF085041) : const Color(0xFF712B13)))),
-                    const SizedBox(width: 6),
-                    GestureDetector(onTap: () => showDialog(context: context, builder: (_) => AlertDialog(
-                      title: const Text('Excluir dia?'),
-                      content: Text('O registro de ${d['data']} será apagado.'),
-                      actions: [
-                        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-                        TextButton(onPressed: () { onDeleteDia(i); Navigator.pop(context); },
-                            child: const Text('Excluir', style: TextStyle(color: Colors.red))),
-                      ],
+            child: GestureDetector(
+              onTap: temHistorico ? () => _abrirHistorico(context, d, historico) : null,
+              child: Container(padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: temHistorico ? const Color(0xFF9FE1CB) : Colors.black12,
+                      width: temHistorico ? 1.0 : 0.5,
                     )),
-                      child: Container(padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(color: const Color(0xFFF1EFE8), borderRadius: BorderRadius.circular(6)),
-                        child: const Icon(Icons.close, size: 13, color: Colors.black38))),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Text(d['data'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                        if (temHistorico) ...[
+                          const SizedBox(width: 6),
+                          const Icon(Icons.expand_more, size: 16, color: Color(0xFF1D9E75)),
+                        ],
+                      ]),
+                      Text(d['semana'] ?? '', style: const TextStyle(fontSize: 10, color: Colors.black38)),
+                    ]),
+                    Row(children: [
+                      Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                        decoration: BoxDecoration(
+                            color: bateu ? const Color(0xFFE1F5EE) : const Color(0xFFFAECE7),
+                            borderRadius: BorderRadius.circular(99)),
+                        child: Text(bateu ? 'Meta batida' : 'Não bateu',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
+                                color: bateu ? const Color(0xFF085041) : const Color(0xFF712B13)))),
+                      const SizedBox(width: 6),
+                      GestureDetector(onTap: () => _confirmarExcluir(context, i, d),
+                        child: Container(padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(color: const Color(0xFFF1EFE8), borderRadius: BorderRadius.circular(6)),
+                          child: const Icon(Icons.close, size: 13, color: Colors.black38))),
+                    ]),
                   ]),
-                ]),
-                const SizedBox(height: 8),
-                Container(height: 0.5, color: Colors.black12),
-                const SizedBox(height: 8),
-                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  const Text('total bruto', style: TextStyle(fontSize: 11, color: Colors.black45)),
-                  Text(_fmt(total), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
-                      color: bateu ? const Color(0xFF1D9E75) : const Color(0xFF993C1D))),
-                ]),
-                if (abast > 0) ...[
+                  const SizedBox(height: 8),
+                  Container(height: 0.5, color: Colors.black12),
+                  const SizedBox(height: 8),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    const Text('total bruto', style: TextStyle(fontSize: 11, color: Colors.black45)),
+                    Text(_fmt(total), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
+                        color: bateu ? const Color(0xFF1D9E75) : const Color(0xFF993C1D))),
+                  ]),
+                  if (abast > 0) ...[
+                    const SizedBox(height: 3),
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      const Text('abastecimento', style: TextStyle(fontSize: 11, color: Colors.black45)),
+                      Text('-${_fmt(abast)}', style: const TextStyle(fontSize: 12, color: Color(0xFF993C1D))),
+                    ]),
+                    const SizedBox(height: 3),
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      const Text('líquido', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.black54)),
+                      Text(_fmt(liquido), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF185FA5))),
+                    ]),
+                  ],
                   const SizedBox(height: 3),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text('abastecimento', style: TextStyle(fontSize: 11, color: Colors.black45)),
-                    Text('-${_fmt(abast)}', style: const TextStyle(fontSize: 12, color: Color(0xFF993C1D))),
+                    const Text('meta do dia', style: TextStyle(fontSize: 11, color: Colors.black45)),
+                    Text(_fmt(meta), style: const TextStyle(fontSize: 12, color: Colors.black87)),
                   ]),
                   const SizedBox(height: 3),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text('líquido', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.black54)),
-                    Text(_fmt(liquido), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF185FA5))),
+                    const Text('viagens · km · horas', style: TextStyle(fontSize: 11, color: Colors.black45)),
+                    Text('$viagens${km > 0 ? ' · ${km.toStringAsFixed(0)}km' : ''}${horas > 0 ? ' · ${_fmtH(horas)}' : ''}',
+                        style: const TextStyle(fontSize: 12, color: Colors.black87)),
                   ]),
-                ],
-                const SizedBox(height: 3),
-                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  const Text('meta do dia', style: TextStyle(fontSize: 11, color: Colors.black45)),
-                  Text(_fmt(meta), style: const TextStyle(fontSize: 12, color: Colors.black87)),
-                ]),
-                const SizedBox(height: 3),
-                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  const Text('viagens · km · horas', style: TextStyle(fontSize: 11, color: Colors.black45)),
-                  Text('$viagens${km > 0 ? ' · ${km.toStringAsFixed(0)}km' : ''}${horas > 0 ? ' · ${_fmtH(horas)}' : ''}',
-                      style: const TextStyle(fontSize: 12, color: Colors.black87)),
-                ]),
-                if (km > 0 || horas > 0) ...[
+                  if (km > 0 || horas > 0) ...[
+                    const SizedBox(height: 10),
+                    Row(children: [
+                      if (horas > 0) Expanded(child: _mediaCard('ganho por hora', 'R\$ ${ganhoH.toStringAsFixed(2).replaceAll('.', ',')}/h')),
+                      if (horas > 0 && km > 0) const SizedBox(width: 8),
+                      if (km > 0) Expanded(child: _mediaCard('ganho por km', 'R\$ ${ganhoKm.toStringAsFixed(2).replaceAll('.', ',')}/km')),
+                    ]),
+                  ],
                   const SizedBox(height: 10),
-                  Row(children: [
-                    if (horas > 0) Expanded(child: _mediaCard('ganho por hora', 'R\$ ${ganhoH.toStringAsFixed(2).replaceAll('.', ',')}/h')),
-                    if (horas > 0 && km > 0) const SizedBox(width: 8),
-                    if (km > 0) Expanded(child: _mediaCard('ganho por km', 'R\$ ${ganhoKm.toStringAsFixed(2).replaceAll('.', ',')}/km')),
+                  ClipRRect(borderRadius: BorderRadius.circular(99),
+                    child: LinearProgressIndicator(value: pctDia, minHeight: 6,
+                      backgroundColor: const Color(0xFFEEEEEE),
+                      color: bateu ? const Color(0xFF1D9E75) : const Color(0xFF993C1D))),
+                  const SizedBox(height: 4),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    Text('${(pctDia * 100).toStringAsFixed(0)}%',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500,
+                            color: bateu ? const Color(0xFF1D9E75) : const Color(0xFF993C1D))),
+                    Text(_fmt(meta), style: const TextStyle(fontSize: 10, color: Colors.black38)),
                   ]),
-                ],
-                const SizedBox(height: 10),
-                ClipRRect(borderRadius: BorderRadius.circular(99),
-                  child: LinearProgressIndicator(value: pctDia, minHeight: 6,
-                    backgroundColor: const Color(0xFFEEEEEE),
-                    color: bateu ? const Color(0xFF1D9E75) : const Color(0xFF993C1D))),
-                const SizedBox(height: 4),
-                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Text('${(pctDia * 100).toStringAsFixed(0)}%',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500,
-                          color: bateu ? const Color(0xFF1D9E75) : const Color(0xFF993C1D))),
-                  Text(_fmt(meta), style: const TextStyle(fontSize: 10, color: Colors.black38)),
-                ]),
-              ])));
+                  if (temHistorico) ...[
+                    const SizedBox(height: 8),
+                    Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(color: const Color(0xFFE1F5EE), borderRadius: BorderRadius.circular(8)),
+                      child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(Icons.touch_app_outlined, size: 13, color: Color(0xFF085041)),
+                        SizedBox(width: 4),
+                        Text('toque para ver o histórico de viagens', style: TextStyle(fontSize: 10, color: Color(0xFF085041))),
+                      ])),
+                  ],
+                ])),
+            ));
         }),
       ]),
     );
+  }
+
+  void _abrirHistorico(BuildContext context, Map<String, dynamic> d, List historico) {
+    final fmt = (double v) => 'R\$ ${v.toStringAsFixed(2).replaceAll('.', ',')}';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.6, maxChildSize: 0.9, minChildSize: 0.3,
+        builder: (_, ctrl) => Container(
+          decoration: const BoxDecoration(color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+          child: Column(children: [
+            Container(margin: const EdgeInsets.only(top: 12), width: 40, height: 4,
+                decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(99))),
+            Padding(padding: const EdgeInsets.all(16),
+              child: Row(children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('${d['data']} · ${d['semana']}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                  Text('${historico.length} viagens · ${fmt((d['total'] as num).toDouble())}',
+                      style: const TextStyle(fontSize: 12, color: Colors.black45)),
+                ])),
+              ])),
+            Container(height: 0.5, color: Colors.black12),
+            Expanded(child: ListView.builder(
+              controller: ctrl,
+              padding: const EdgeInsets.all(16),
+              itemCount: historico.length,
+              itemBuilder: (_, i) {
+                final v = historico[i] as Map;
+                return Padding(padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(children: [
+                    Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(color: const Color(0xFF9FE1CB), borderRadius: BorderRadius.circular(99)),
+                      child: Text('#${i + 1}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF085041)))),
+                    const SizedBox(width: 10),
+                    Text(v['hora']?.toString() ?? '', style: const TextStyle(fontSize: 12, color: Colors.black45)),
+                    const Spacer(),
+                    Text('+${fmt((v['val'] as num).toDouble())}',
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF1D9E75))),
+                  ]));
+              },
+            )),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  void _confirmarExcluir(BuildContext context, int i, Map d) {
+    showDialog(context: context, builder: (_) => AlertDialog(
+      title: const Text('Excluir dia?'),
+      content: Text('O registro de ${d['data']} será apagado.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        TextButton(onPressed: () { onDeleteDia(i); Navigator.pop(context); },
+            child: const Text('Excluir', style: TextStyle(color: Colors.red))),
+      ],
+    ));
   }
 
   Widget _mini(String label, String val, Color color) => Expanded(
@@ -676,43 +773,69 @@ class ResumoTab extends StatefulWidget {
 }
 
 class _ResumoTabState extends State<ResumoTab> {
-  // filtro
   DateTime? _inicio;
   DateTime? _fim;
   DateTime _calMes = DateTime.now();
   bool _showCal = false;
   String _quickSel = '30';
+  // para seleção de range no calendário
+  DateTime? _tapInicio;
 
   @override
-  void initState() {
-    super.initState();
-    _aplicarQuick('30');
-  }
+  void initState() { super.initState(); _aplicarQuick('30'); }
 
   void _aplicarQuick(String q) {
     final now = DateTime.now();
     setState(() {
       _quickSel = q;
+      _tapInicio = null;
       _fim = now;
       if (q == 'hoje') { _inicio = DateTime(now.year, now.month, now.day); }
       else if (q == 'mes') { _inicio = DateTime(now.year, now.month, 1); }
+      else if (q == 'ano') { _inicio = DateTime(now.year, 1, 1); }
+      else if (q == 'tudo') { _inicio = DateTime(2020, 1, 1); }
       else { final days = int.tryParse(q) ?? 30; _inicio = now.subtract(Duration(days: days)); }
+    });
+  }
+
+  void _tapDia(DateTime dia) {
+    setState(() {
+      if (_tapInicio == null) {
+        // Primeiro toque: define início
+        _tapInicio = DateTime(dia.year, dia.month, dia.day);
+        _inicio = _tapInicio;
+        _fim = _tapInicio;
+        _quickSel = '';
+      } else {
+        // Segundo toque: define fim (ou redefine se clicar no mesmo dia)
+        final fim = DateTime(dia.year, dia.month, dia.day);
+        if (fim.isBefore(_tapInicio!)) {
+          // Clicou antes do início: inverte
+          _inicio = fim;
+          _fim = _tapInicio;
+        } else {
+          _inicio = _tapInicio;
+          _fim = fim;
+        }
+        _tapInicio = null; // reset para próxima seleção
+        _quickSel = '';
+      }
     });
   }
 
   List<Map<String, dynamic>> get _diasFiltrados {
     if (_inicio == null || _fim == null) return widget.dias;
+    final fimDia = DateTime(_fim!.year, _fim!.month, _fim!.day, 23, 59, 59);
     return widget.dias.where((d) {
       try {
         final iso = d['dataISO'] as String?;
-        if (iso != null) {
-          final dt = DateTime.parse(iso);
-          return !dt.isBefore(_inicio!) && !dt.isAfter(_fim!.add(const Duration(days: 1)));
+        DateTime dt;
+        if (iso != null) { dt = DateTime.parse(iso); }
+        else {
+          final parts = (d['data'] as String).split('/');
+          dt = DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
         }
-        // fallback: parse dd/mm/yyyy
-        final parts = (d['data'] as String).split('/');
-        final dt = DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
-        return !dt.isBefore(_inicio!) && !dt.isAfter(_fim!.add(const Duration(days: 1)));
+        return !dt.isBefore(_inicio!) && !dt.isAfter(fimDia);
       } catch (_) { return true; }
     }).toList();
   }
@@ -721,9 +844,18 @@ class _ResumoTabState extends State<ResumoTab> {
   String _fmtH(double h) { final hh = h.floor(); final mm = ((h-hh)*60).round(); return mm > 0 ? '${hh}h${mm.toString().padLeft(2,'0')}' : '${hh}h'; }
   String _fmtDate(DateTime d) => '${d.day.toString().padLeft(2,'0')}/${d.month.toString().padLeft(2,'0')}/${d.year}';
 
+  bool _isStart(DateTime d) => _inicio != null && d.year == _inicio!.year && d.month == _inicio!.month && d.day == _inicio!.day;
+  bool _isEnd(DateTime d) => _fim != null && d.year == _fim!.year && d.month == _fim!.month && d.day == _fim!.day;
+  bool _isInRange(DateTime d) {
+    if (_inicio == null || _fim == null) return false;
+    return !d.isBefore(_inicio!) && !d.isAfter(_fim!);
+  }
+  bool _isToday(DateTime d) { final n = DateTime.now(); return d.year == n.year && d.month == n.month && d.day == n.day; }
+
   @override
   Widget build(BuildContext context) {
     final dias = _diasFiltrados;
+    final meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -739,27 +871,30 @@ class _ResumoTabState extends State<ResumoTab> {
               border: Border.all(color: _showCal ? const Color(0xFF5DCAA5) : Colors.black12, width: 0.5),
             ),
             child: Row(children: [
-              Icon(Icons.calendar_month_outlined, size: 16,
-                  color: _showCal ? const Color(0xFF085041) : Colors.black54),
+              Icon(Icons.calendar_month_outlined, size: 16, color: _showCal ? const Color(0xFF085041) : Colors.black54),
               const SizedBox(width: 8),
               Expanded(child: Text(
-                _inicio != null && _fim != null
-                  ? '${_fmtDate(_inicio!)}  →  ${_fmtDate(_fim!)}'
-                  : 'Selecionar período',
+                _inicio != null && _fim != null ? '${_fmtDate(_inicio!)}  →  ${_fmtDate(_fim!)}' : 'Selecionar período',
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
                     color: _showCal ? const Color(0xFF085041) : Colors.black87),
               )),
-              Icon(_showCal ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                  size: 18, color: Colors.black38),
+              Icon(_showCal ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 18, color: Colors.black38),
             ]),
           ),
         ),
         const SizedBox(height: 8),
 
-        // Atalhos rápidos (sempre visíveis)
+        // Chips de atalho — sem 60 e 90, com "Todo período" e "Anual"
         SingleChildScrollView(scrollDirection: Axis.horizontal,
           child: Row(children: [
-            for (final q in [('hoje','Hoje'),('7','7 dias'),('30','30 dias'),('60','60 dias'),('90','90 dias'),('mes','Este mês')])
+            for (final q in [
+              ('hoje', 'Hoje'),
+              ('7', '7 dias'),
+              ('30', '30 dias'),
+              ('mes', 'Este mês'),
+              ('ano', 'Este ano'),
+              ('tudo', 'Todo período'),
+            ])
               Padding(padding: const EdgeInsets.only(right: 6),
                 child: GestureDetector(onTap: () => _aplicarQuick(q.$1),
                   child: Container(
@@ -776,17 +911,79 @@ class _ResumoTabState extends State<ResumoTab> {
 
         // Calendário expansível
         if (_showCal) ...[
-          _CalendarioWidget(
-            mes: _calMes,
-            inicio: _inicio,
-            fim: _fim,
-            onMesChanged: (m) => setState(() => _calMes = m),
-            onRangeChanged: (ini, fim) => setState(() { _inicio = ini; _fim = fim; _quickSel = ''; }),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.black12, width: 0.5)),
+            child: Column(children: [
+              // Header mês
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                GestureDetector(
+                  onTap: () => setState(() => _calMes = DateTime(_calMes.year, _calMes.month - 1)),
+                  child: const Padding(padding: EdgeInsets.all(6), child: Icon(Icons.chevron_left, size: 22, color: Colors.black54))),
+                Text('${meses[_calMes.month - 1]} ${_calMes.year}',
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                GestureDetector(
+                  onTap: () => setState(() => _calMes = DateTime(_calMes.year, _calMes.month + 1)),
+                  child: const Padding(padding: EdgeInsets.all(6), child: Icon(Icons.chevron_right, size: 22, color: Colors.black54))),
+              ]),
+              const SizedBox(height: 10),
+              // Nomes dos dias
+              Row(children: ['D','S','T','Q','Q','S','S'].map((d) => Expanded(
+                child: Center(child: Text(d, style: const TextStyle(fontSize: 11, color: Colors.black38, fontWeight: FontWeight.w500))))).toList()),
+              const SizedBox(height: 4),
+              // Grid
+              Builder(builder: (_) {
+                final firstDay = DateTime(_calMes.year, _calMes.month, 1);
+                final daysInMonth = DateTime(_calMes.year, _calMes.month + 1, 0).day;
+                final startWeekday = firstDay.weekday % 7;
+                final cells = startWeekday + daysInMonth;
+                return GridView.builder(
+                  shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7, childAspectRatio: 1),
+                  itemCount: cells,
+                  itemBuilder: (_, idx) {
+                    if (idx < startWeekday) return const SizedBox();
+                    final dia = DateTime(_calMes.year, _calMes.month, idx - startWeekday + 1);
+                    final start = _isStart(dia);
+                    final end = _isEnd(dia) && !start;
+                    final inRange = _isInRange(dia) && !start && !end;
+                    final today = _isToday(dia);
+                    final isPendente = _tapInicio != null && dia == _tapInicio;
+
+                    Color bg = Colors.transparent;
+                    Color fg = Colors.black87;
+                    BorderRadius br = BorderRadius.circular(6);
+
+                    if (start) { bg = const Color(0xFF1D9E75); fg = Colors.white; br = BorderRadius.circular(99); }
+                    else if (end) { bg = const Color(0xFF1D9E75); fg = Colors.white; br = BorderRadius.circular(99); }
+                    else if (inRange) { bg = const Color(0xFFE1F5EE); fg = const Color(0xFF085041); br = BorderRadius.zero; }
+                    else if (today) { bg = const Color(0xFFB5D4F4); fg = const Color(0xFF0C447C); br = BorderRadius.circular(99); }
+
+                    return GestureDetector(
+                      onTap: () => _tapDia(dia),
+                      child: Container(
+                        decoration: BoxDecoration(color: bg, borderRadius: br),
+                        child: Center(child: Text('${dia.day}',
+                            style: TextStyle(fontSize: 11,
+                                fontWeight: (start || end || isPendente) ? FontWeight.w700 : FontWeight.normal,
+                                color: fg)))));
+                  });
+              }),
+              const SizedBox(height: 8),
+              if (_tapInicio != null)
+                Text('Toque no dia final do período',
+                    style: const TextStyle(fontSize: 11, color: Colors.black38, fontStyle: FontStyle.italic))
+              else
+                Text('Toque em dois dias para selecionar o período',
+                    style: const TextStyle(fontSize: 11, color: Colors.black38, fontStyle: FontStyle.italic)),
+            ]),
           ),
           const SizedBox(height: 8),
         ],
 
-        Builder(builder: (context) {
+        // Resultados
+        Builder(builder: (_) {
           if (dias.isEmpty) {
             return Container(padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
@@ -806,54 +1003,49 @@ class _ResumoTabState extends State<ResumoTab> {
           final mediaKm = totalKm > 0 ? totalGanho / totalKm : 0.0;
           final mediaVia = totalViagens > 0 ? totalGanho / totalViagens : 0.0;
           final liquido = totalGanho - totalAbast;
+
           return Column(children: [
-
-          // Card total
-          Container(width: double.infinity, padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.black12, width: 0.5)),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Total ganho (${dias.length} dias)', style: const TextStyle(fontSize: 12, color: Colors.black45)),
-              const SizedBox(height: 4),
-              Text(_fmt(totalGanho), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w500, color: Color(0xFF1D9E75))),
-              if (totalAbast > 0) ...[
+            Container(width: double.infinity, padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.black12, width: 0.5)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Total ganho (${dias.length} dias)', style: const TextStyle(fontSize: 12, color: Colors.black45)),
                 const SizedBox(height: 4),
-                Row(children: [
-                  Text('abastec.: -${_fmt(totalAbast)}', style: const TextStyle(fontSize: 12, color: Color(0xFF993C1D))),
-                  const SizedBox(width: 12),
-                  Text('líquido: ${_fmt(liquido)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF185FA5))),
-                ]),
-              ],
-            ])),
-          const SizedBox(height: 8),
-
-          // Grid stats
-          GridView.count(crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 8, mainAxisSpacing: 8, childAspectRatio: 2.2,
-            children: [
-              _numCard('Dias trabalhados', '${dias.length}', Colors.black87),
-              _numCard('Metas batidas', '$batidas de ${dias.length}', const Color(0xFF1D9E75)),
-              _numCard('Aproveitamento', '$pct%', pct >= 70 ? const Color(0xFF1D9E75) : const Color(0xFFBA7517)),
-              _numCard('Total viagens', '$totalViagens', Colors.black87),
-              _numCard('Km rodados', '${totalKm.toStringAsFixed(0)} km', const Color(0xFF185FA5)),
-              _numCard('Horas trabalhadas', _fmtH(totalHoras), Colors.black87),
-            ]),
-          const SizedBox(height: 8),
-
-          // Médias
-          Container(padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.black12, width: 0.5)),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Médias do período', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black54)),
-              const SizedBox(height: 12),
-              _mediaRow('Ganho por dia', _fmt(mediaDia)),
-              _mediaRow('Ganho por viagem', _fmt(mediaVia)),
-              if (totalHoras > 0) _mediaRow('Ganho por hora', 'R\$ ${mediaH.toStringAsFixed(2).replaceAll('.', ',')}/h'),
-              if (totalKm > 0) _mediaRow('Ganho por km', 'R\$ ${mediaKm.toStringAsFixed(2).replaceAll('.', ',')}/km'),
-              if (totalAbast > 0) _mediaRow('Líquido por dia', _fmt(liquido / dias.length)),
-              if (totalViagens > 0) _mediaRow('Viagens por dia', (totalViagens / dias.length).toStringAsFixed(1)),
-            ])),
+                Text(_fmt(totalGanho), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w500, color: Color(0xFF1D9E75))),
+                if (totalAbast > 0) ...[
+                  const SizedBox(height: 6),
+                  Row(children: [
+                    Text('abastec.: -${_fmt(totalAbast)}', style: const TextStyle(fontSize: 12, color: Color(0xFF993C1D))),
+                    const SizedBox(width: 12),
+                    Text('líquido: ${_fmt(liquido)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF185FA5))),
+                  ]),
+                ],
+              ])),
+            const SizedBox(height: 8),
+            GridView.count(crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 8, mainAxisSpacing: 8, childAspectRatio: 2.2,
+              children: [
+                _numCard('Dias trabalhados', '${dias.length}', Colors.black87),
+                _numCard('Metas batidas', '$batidas de ${dias.length}', const Color(0xFF1D9E75)),
+                _numCard('Aproveitamento', '$pct%', pct >= 70 ? const Color(0xFF1D9E75) : const Color(0xFFBA7517)),
+                _numCard('Total viagens', '$totalViagens', Colors.black87),
+                _numCard('Km rodados', '${totalKm.toStringAsFixed(0)} km', const Color(0xFF185FA5)),
+                _numCard('Horas trabalhadas', _fmtH(totalHoras), Colors.black87),
+              ]),
+            const SizedBox(height: 8),
+            Container(padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.black12, width: 0.5)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('Médias do período', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black54)),
+                const SizedBox(height: 12),
+                _mediaRow('Ganho por dia', _fmt(mediaDia)),
+                _mediaRow('Ganho por viagem', _fmt(mediaVia)),
+                if (totalHoras > 0) _mediaRow('Ganho por hora', 'R\$ ${mediaH.toStringAsFixed(2).replaceAll('.', ',')}/h'),
+                if (totalKm > 0) _mediaRow('Ganho por km', 'R\$ ${mediaKm.toStringAsFixed(2).replaceAll('.', ',')}/km'),
+                if (totalAbast > 0) _mediaRow('Líquido por dia', _fmt(liquido / dias.length)),
+                if (totalViagens > 0) _mediaRow('Viagens por dia', (totalViagens / dias.length).toStringAsFixed(1)),
+              ])),
           ]);
         }),
       ]),
@@ -875,180 +1067,4 @@ class _ResumoTabState extends State<ResumoTab> {
       Text(label, style: const TextStyle(fontSize: 13, color: Colors.black54)),
       Text(val, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black87)),
     ]));
-}
-
-// ─── CALENDÁRIO ───────────────────────────────────────────────────────────────
-
-class _CalendarioWidget extends StatefulWidget {
-  final DateTime mes;
-  final DateTime? inicio, fim;
-  final Function(DateTime) onMesChanged;
-  final Function(DateTime, DateTime) onRangeChanged;
-  const _CalendarioWidget({required this.mes, this.inicio, this.fim,
-    required this.onMesChanged, required this.onRangeChanged});
-  @override State<_CalendarioWidget> createState() => _CalendarioWidgetState();
-}
-
-class _CalendarioWidgetState extends State<_CalendarioWidget> {
-  DateTime? _tapInicio;
-
-  void _tapDia(DateTime dia) {
-    if (_tapInicio == null || (widget.inicio != null && widget.fim != null)) {
-      setState(() => _tapInicio = dia);
-    } else {
-      final ini = _tapInicio!.isBefore(dia) ? _tapInicio! : dia;
-      final fim = _tapInicio!.isBefore(dia) ? dia : _tapInicio!;
-      setState(() => _tapInicio = null);
-      widget.onRangeChanged(ini, fim);
-    }
-  }
-
-  bool _isInRange(DateTime d) {
-    final ini = _tapInicio ?? widget.inicio;
-    final fim = widget.fim;
-    if (ini == null) return false;
-    if (_tapInicio != null) return d == ini;
-    if (fim == null) return d == ini;
-    return !d.isBefore(ini) && !d.isAfter(fim);
-  }
-
-  bool _isStart(DateTime d) => (_tapInicio ?? widget.inicio)?.year == d.year &&
-      (_tapInicio ?? widget.inicio)?.month == d.month &&
-      (_tapInicio ?? widget.inicio)?.day == d.day;
-  bool _isEnd(DateTime d) => widget.fim?.year == d.year && widget.fim?.month == d.month && widget.fim?.day == d.day && _tapInicio == null;
-  bool _isToday(DateTime d) { final n = DateTime.now(); return d.year == n.year && d.month == n.month && d.day == n.day; }
-
-  @override
-  Widget build(BuildContext context) {
-    final mes = widget.mes;
-    final firstDay = DateTime(mes.year, mes.month, 1);
-    final daysInMonth = DateTime(mes.year, mes.month + 1, 0).day;
-    final startWeekday = firstDay.weekday % 7; // 0=dom
-    final meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.black12, width: 0.5)),
-      child: Column(children: [
-        // Header do mês
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          GestureDetector(onTap: () => widget.onMesChanged(DateTime(mes.year, mes.month - 1)),
-            child: Container(padding: const EdgeInsets.all(6),
-              child: const Icon(Icons.chevron_left, size: 20, color: Colors.black54))),
-          Text('${meses[mes.month - 1]} ${mes.year}',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-          GestureDetector(onTap: () => widget.onMesChanged(DateTime(mes.year, mes.month + 1)),
-            child: Container(padding: const EdgeInsets.all(6),
-              child: const Icon(Icons.chevron_right, size: 20, color: Colors.black54))),
-        ]),
-        const SizedBox(height: 10),
-
-        // Nomes dos dias
-        Row(children: ['D','S','T','Q','Q','S','S'].map((d) => Expanded(
-          child: Center(child: Text(d, style: const TextStyle(fontSize: 11, color: Colors.black38, fontWeight: FontWeight.w500))))).toList()),
-        const SizedBox(height: 4),
-
-        // Grid dos dias
-        GridView.builder(
-          shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7, childAspectRatio: 1),
-          itemCount: startWeekday + daysInMonth,
-          itemBuilder: (_, i) {
-            if (i < startWeekday) return const SizedBox();
-            final dia = DateTime(mes.year, mes.month, i - startWeekday + 1);
-            final inRange = _isInRange(dia);
-            final isStart = _isStart(dia);
-            final isEnd = _isEnd(dia);
-            final isToday = _isToday(dia);
-
-            Color bg = Colors.transparent;
-            Color fg = Colors.black87;
-            BorderRadius br = BorderRadius.circular(6);
-
-            if (isStart) { bg = const Color(0xFF1D9E75); fg = Colors.white; br = const BorderRadius.only(topLeft: Radius.circular(99), bottomLeft: Radius.circular(99)); }
-            else if (isEnd) { bg = const Color(0xFF1D9E75); fg = Colors.white; br = const BorderRadius.only(topRight: Radius.circular(99), bottomRight: Radius.circular(99)); }
-            else if (inRange) { bg = const Color(0xFFE1F5EE); fg = const Color(0xFF085041); br = BorderRadius.zero; }
-            else if (isToday) { bg = const Color(0xFF9FE1CB); fg = const Color(0xFF085041); br = BorderRadius.circular(99); }
-
-            return GestureDetector(
-              onTap: () => _tapDia(dia),
-              child: Container(
-                decoration: BoxDecoration(color: bg, borderRadius: br),
-                child: Center(child: Text('${dia.day}',
-                    style: TextStyle(fontSize: 11, fontWeight: (isStart || isEnd) ? FontWeight.w600 : FontWeight.normal, color: fg)))),
-            );
-          }),
-        const SizedBox(height: 6),
-        if (_tapInicio != null)
-          Text('Toque no dia final do período', style: TextStyle(fontSize: 11, color: Colors.black38, fontStyle: FontStyle.italic)),
-      ]),
-    );
-  }
-}
-
-// ─── OVERLAY ──────────────────────────────────────────────────────────────────
-
-class OverlayWidget extends StatefulWidget {
-  const OverlayWidget({super.key});
-  @override State<OverlayWidget> createState() => _OverlayWidgetState();
-}
-
-class _OverlayWidgetState extends State<OverlayWidget> {
-  double _atual = 0, _meta = 500; int _viagens = 0;
-  @override
-  void initState() {
-    super.initState();
-    FlutterOverlayWindow.overlayListener.listen((data) {
-      if (data is Map && mounted) setState(() {
-        _atual = (data['atual'] as num?)?.toDouble() ?? _atual;
-        _meta = (data['meta'] as num?)?.toDouble() ?? _meta;
-        _viagens = (data['viagens'] as num?)?.toInt() ?? _viagens;
-      });
-    });
-  }
-  String _fmt(double v) => 'R\$ ${v.toStringAsFixed(2).replaceAll('.', ',')}';
-  double get _pct => _meta > 0 ? (_atual / _meta).clamp(0, 1) : 0;
-  double get _falta => (_meta - _atual).clamp(0, double.infinity);
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false,
-      home: Scaffold(backgroundColor: Colors.transparent,
-        body: SafeArea(child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 12, offset: const Offset(0, 3))]),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Row(children: [
-              Text(_fmt(_atual), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF1D9E75))),
-              const SizedBox(width: 8),
-              Container(padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(color: const Color(0xFFE1F5EE), borderRadius: BorderRadius.circular(99)),
-                child: Text('$_viagens viagens', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: Color(0xFF0F6E56)))),
-              const Spacer(),
-              Text(_falta <= 0 ? 'Meta atingida!' : 'falta ${_fmt(_falta)}',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
-                      color: _falta <= 0 ? const Color(0xFF1D9E75) : const Color(0xFF993C1D))),
-              const SizedBox(width: 8),
-              GestureDetector(onTap: () async => await FlutterOverlayWindow.closeOverlay(),
-                child: Container(width: 24, height: 24,
-                  decoration: BoxDecoration(color: const Color(0xFFF1EFE8), borderRadius: BorderRadius.circular(99)),
-                  child: const Icon(Icons.close, size: 14, color: Colors.black45))),
-            ]),
-            const SizedBox(height: 8),
-            ClipRRect(borderRadius: BorderRadius.circular(99),
-              child: LinearProgressIndicator(value: _pct, minHeight: 8,
-                  backgroundColor: const Color(0xFFEEEEEE), color: const Color(0xFF1D9E75))),
-            const SizedBox(height: 4),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text('${(_pct * 100).toStringAsFixed(0)}%',
-                  style: const TextStyle(fontSize: 10, color: Color(0xFF1D9E75), fontWeight: FontWeight.w500)),
-              Text('Meta: ${_fmt(_meta)}', style: const TextStyle(fontSize: 10, color: Colors.black38)),
-            ]),
-          ]),
-        )),
-      ));
-  }
 }
