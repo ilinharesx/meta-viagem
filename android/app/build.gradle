@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace "com.example.meta_viagem"
-    compileSdk 34
+    compileSdk 36
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -20,7 +20,7 @@ android {
     defaultConfig {
         applicationId "com.example.meta_viagem"
         minSdk 23
-        targetSdk 34
+        targetSdk 36
         versionCode 1
         versionName "1.0"
     }
