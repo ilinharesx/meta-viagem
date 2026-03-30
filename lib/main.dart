@@ -774,48 +774,63 @@ class _DiarioTabState extends State<DiarioTab> {
       isDismissible: true,
       enableDrag: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => GestureDetector(
-        onTap: () => Navigator.pop(context),
+      builder: (sheetCtx) => GestureDetector(
+        onTap: () => Navigator.pop(sheetCtx),
         behavior: HitTestBehavior.opaque,
         child: DraggableScrollableSheet(
-        initialChildSize: 0.6, maxChildSize: 0.9, minChildSize: 0.3,
-        builder: (_, ctrl) => GestureDetector(
-          onTap: () {}, // absorb taps inside sheet
-          child: Container(
-          decoration: const BoxDecoration(color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-          child: Column(children: [
-            Container(margin: const EdgeInsets.only(top: 12), width: 40, height: 4,
-                decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(99))),
-            Padding(padding: const EdgeInsets.all(16),
-              child: Row(children: [
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('${d['data']} · ${d['semana']}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                  Text('${historico.length} viagens · ${fmt((d['total'] as num).toDouble())}',
-                      style: const TextStyle(fontSize: 12, color: Colors.black45)),
-                ])),
-              ])),
-            Container(height: 0.5, color: Colors.black12),
-            Expanded(child: ListView.builder(
-              controller: ctrl,
-              padding: const EdgeInsets.all(16),
-              itemCount: historico.length,
-              itemBuilder: (_, i) {
-                final v = historico[i] as Map;
-                return Padding(padding: const EdgeInsets.only(bottom: 8),
+          initialChildSize: 0.6,
+          maxChildSize: 0.9,
+          minChildSize: 0.3,
+          builder: (_, ctrl) => GestureDetector(
+            onTap: () {},
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(99)),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Row(children: [
-                    Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(color: const Color(0xFF9FE1CB), borderRadius: BorderRadius.circular(99)),
-                      child: Text('#${i + 1}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF085041)))),
-                    const SizedBox(width: 10),
-                    Text(v['hora']?.toString() ?? '', style: const TextStyle(fontSize: 12, color: Colors.black45)),
-                    const Spacer(),
-                    Text('+${fmt((v['val'] as num).toDouble())}',
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF1D9E75))),
-                  ]));
-              },
-            )),
-          ]),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('${d['data']} · ${d['semana']}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                      Text('${historico.length} viagens · ${fmt((d['total'] as num).toDouble())}',
+                          style: const TextStyle(fontSize: 12, color: Colors.black45)),
+                    ])),
+                  ]),
+                ),
+                Container(height: 0.5, color: Colors.black12),
+                Expanded(child: ListView.builder(
+                  controller: ctrl,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: historico.length,
+                  itemBuilder: (_, i) {
+                    final v = historico[i] as Map;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(color: const Color(0xFF9FE1CB), borderRadius: BorderRadius.circular(99)),
+                          child: Text('#${i + 1}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF085041))),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(v['hora']?.toString() ?? '', style: const TextStyle(fontSize: 12, color: Colors.black45)),
+                        const Spacer(),
+                        Text('+${fmt((v['val'] as num).toDouble())}',
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF1D9E75))),
+                      ]),
+                    );
+                  },
+                )),
+              ]),
+            ),
+          ),
         ),
       ),
     );
