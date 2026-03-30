@@ -382,14 +382,14 @@ class _HojeTabState extends State<HojeTab> {
           const SizedBox(width: 6),
           _statCard('Líquido', _fmt(_liquido), const Color(0xFF185FA5)),
           const SizedBox(width: 6),
-          _statCard('Viagens', '${_viagens.where((v) => v['promo'] != true).length}', Colors.black87),
+          _statCard('Viagens', '${_viagens.where((v) => v['promo'] != true).length}', Theme.of(context).colorScheme.onSurface),
         ]),
         const SizedBox(height: 12),
 
         // Barra de progresso
         _card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('Meta: ${_fmt(_meta)}', style: const TextStyle(fontSize: 13, color: Colors.black54)),
+            Text('Meta: ${_fmt(_meta)}', style: const TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
             Text(_falta <= 0 ? 'Meta atingida!' : 'falta ${_fmt(_falta)}',
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
                     color: _falta <= 0 ? const Color(0xFF1D9E75) : const Color(0xFF993C1D))),
@@ -397,12 +397,12 @@ class _HojeTabState extends State<HojeTab> {
           const SizedBox(height: 10),
           ClipRRect(borderRadius: BorderRadius.circular(99),
             child: LinearProgressIndicator(value: _pct, minHeight: 10,
-                backgroundColor: const Color(0xFFEEEEEE), color: const Color(0xFF1D9E75))),
+                backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1), color: const Color(0xFF1D9E75))),
           const SizedBox(height: 6),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text('${(_pct * 100).toStringAsFixed(0)}%',
                 style: const TextStyle(fontSize: 11, color: Color(0xFF1D9E75), fontWeight: FontWeight.w500)),
-            Text(_fmt(_meta), style: const TextStyle(fontSize: 11, color: Colors.black45)),
+            Text(_fmt(_meta), style: const TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
           ]),
         ])),
         const SizedBox(height: 12),
@@ -410,7 +410,7 @@ class _HojeTabState extends State<HojeTab> {
         // Registrar viagens com toggle
         _card(Column(children: [
           const Align(alignment: Alignment.centerLeft,
-            child: Text('Registrar viagens', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black54))),
+            child: Text('Registrar viagens', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)))),
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(color: const Color(0xFFEEEEEE), borderRadius: BorderRadius.circular(8)),
@@ -440,7 +440,7 @@ class _HojeTabState extends State<HojeTab> {
                     color: _ehPromocao ? const Color(0xFFBA7517) : Colors.transparent,
                     borderRadius: BorderRadius.circular(5),
                     border: Border.all(
-                      color: _ehPromocao ? const Color(0xFFBA7517) : Colors.black26,
+                      color: _ehPromocao ? const Color(0xFFBA7517) : Theme.of(context).colorScheme.onSurface.withOpacity(0.26),
                       width: 1.5,
                     ),
                   ),
@@ -451,17 +451,17 @@ class _HojeTabState extends State<HojeTab> {
                 const SizedBox(width: 8),
                 Text('É promoção/bônus',
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
-                    color: _ehPromocao ? const Color(0xFFBA7517) : Colors.black45)),
+                    color: _ehPromocao ? const Color(0xFFBA7517) : Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
                 const SizedBox(width: 6),
                 Text('(não conta no saldo)',
-                  style: const TextStyle(fontSize: 11, color: Colors.black38)),
+                  style: const TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
               ]),
             ),
             const SizedBox(height: 8),
             Row(children: [
               Expanded(child: _btn('+ Viagem', const Color(0xFF1D9E75), Colors.white, _addViagem)),
               const SizedBox(width: 6),
-              Expanded(child: _btn('Salvar meta', Colors.white, Colors.black87, _setMeta, border: Colors.black26)),
+              Expanded(child: _btn('Salvar meta', Colors.white, Theme.of(context).colorScheme.onSurface, _setMeta, border: Theme.of(context).colorScheme.onSurface.withOpacity(0.26))),
               const SizedBox(width: 6),
               Expanded(child: _btn('Zerar', Colors.white, const Color(0xFF993C1D), _zerar, border: const Color(0xFFD85A30))),
             ]),
@@ -473,16 +473,16 @@ class _HojeTabState extends State<HojeTab> {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF5F5F0),
-                  border: Border.all(color: Colors.black26, width: 0.5),
+                  border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.26), width: 0.5),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(children: [
                   const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF1D9E75)),
                   const SizedBox(width: 8),
                   Text(_fmtData(_dataTotalSelecionada),
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black87)),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface)),
                   const Spacer(),
-                  const Text('alterar', style: TextStyle(fontSize: 11, color: Colors.black38)),
+                  const Text('alterar', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
                 ]),
               ),
             ),
@@ -496,18 +496,18 @@ class _HojeTabState extends State<HojeTab> {
             _inputField(_metaTotalCtrl, 'Meta do dia (R\$)', '500'),
             const SizedBox(height: 6),
             const Text('os dados do expediente serão preenchidos na seção abaixo',
-                style: TextStyle(fontSize: 11, color: Colors.black38)),
+                style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
           ],
         ])),
         const SizedBox(height: 12),
 
         // Encerrar o dia
         _card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Encerrar o dia', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black54)),
+          const Text('Encerrar o dia', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
           const SizedBox(height: 10),
-          Container(height: 0.5, color: Colors.black12),
+          Container(height: 0.5, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12)),
           const SizedBox(height: 10),
-          const Text('Dados do expediente', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.black45)),
+          const Text('Dados do expediente', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
           const SizedBox(height: 8),
           Row(children: [
             Expanded(child: _inputField(_kmCtrl, 'Km rodados', 'ex: 187')),
@@ -518,7 +518,7 @@ class _HojeTabState extends State<HojeTab> {
           SizedBox(width: MediaQuery.of(context).size.width / 2 - 20,
             child: _inputField(_abastCtrl, 'Abastecimento (R\$)', 'ex: 80.00')),
           const SizedBox(height: 12),
-          Container(height: 0.5, color: Colors.black12),
+          Container(height: 0.5, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12)),
           const SizedBox(height: 12),
           Builder(builder: (ctx) {
             final dark = Theme.of(ctx).brightness == Brightness.dark;
@@ -537,7 +537,7 @@ class _HojeTabState extends State<HojeTab> {
           }),
           const SizedBox(height: 6),
           const Center(child: Text('salva no Diário e zera o contador de hoje',
-              style: TextStyle(fontSize: 11, color: Colors.black38))),
+              style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38)))),
         ])),
         const SizedBox(height: 12),
 
@@ -548,9 +548,9 @@ class _HojeTabState extends State<HojeTab> {
               final normais = _viagens.where((v) => v['promo'] != true).length;
               final promos = _viagens.where((v) => v['promo'] == true).length;
               return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                const Text('Viagens de hoje', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black54)),
+                const Text('Viagens de hoje', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
                 Text('$normais viagens${promos > 0 ? ' · $promos promo' : ''} · ${_fmt(_media)}/viag.',
-                    style: const TextStyle(fontSize: 11, color: Colors.black38)),
+                    style: const TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
               ]);
             }),
             const SizedBox(height: 10),
@@ -570,7 +570,7 @@ class _HojeTabState extends State<HojeTab> {
                         decoration: BoxDecoration(color: const Color(0xFF9FE1CB), borderRadius: BorderRadius.circular(99)),
                         child: Text('#$numNormal', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF085041)))),
                   const SizedBox(width: 8),
-                  Text(v['hora'] ?? '', style: const TextStyle(fontSize: 11, color: Colors.black38)),
+                  Text(v['hora'] ?? '', style: const TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
                   const Spacer(),
                   Text('+${_fmt((v['val'] as num).toDouble())}',
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
@@ -594,7 +594,7 @@ class _HojeTabState extends State<HojeTab> {
         decoration: BoxDecoration(color: active ? Colors.white : Colors.transparent, borderRadius: BorderRadius.circular(6)),
         child: Text(label, textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
-                color: active ? Colors.black87 : Colors.black45)))));
+                color: active ? Theme.of(ctx).colorScheme.onSurface : Theme.of(ctx).colorScheme.onSurface.withOpacity(0.5))))));
 
   Widget _card(Widget child) => Builder(builder: (ctx) {
     final isDark = Theme.of(ctx).brightness == Brightness.dark;
@@ -615,7 +615,7 @@ class _HojeTabState extends State<HojeTab> {
           color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFEEEEEE),
           borderRadius: BorderRadius.circular(10)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(fontSize: 9, color: isDark ? Colors.white38 : Colors.black45)),
+          Text(label, style: TextStyle(fontSize: 9, color: Theme.of(ctx).colorScheme.onSurface.withOpacity(0.5))),
           const SizedBox(height: 2),
           Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: color)),
         ]));
@@ -623,16 +623,16 @@ class _HojeTabState extends State<HojeTab> {
 
   Widget _inputField(TextEditingController ctrl, String label, String hint) =>
     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontSize: 11, color: Colors.black54)),
+      Text(label, style: const TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
       const SizedBox(height: 4),
       TextField(controller: ctrl,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        decoration: InputDecoration(hintText: hint, hintStyle: const TextStyle(fontSize: 13),
+        decoration: InputDecoration(hintText: hint, hintStyle: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38)),
           contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.black26, width: 0.5)),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3), width: 0.5)),
           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.black26, width: 0.5)))),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3), width: 0.5)))),
     ]);
 
   Widget _btn(String label, Color bg, Color fg, VoidCallback onTap, {Color border = Colors.transparent}) =>
@@ -696,7 +696,7 @@ class _DiarioTabState extends State<DiarioTab> {
     final dias = _diasFiltrados;
 
     if (widget.dias.isEmpty) return const Center(child: Text('Nenhum dia registrado ainda.\nEncerre o primeiro dia na aba Hoje!',
-        textAlign: TextAlign.center, style: TextStyle(color: Colors.black38, fontSize: 14)));
+        textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38), fontSize: 14)));
 
     final batidas = widget.dias.where((d) => d['bateu'] == true).length;
     final pct = (batidas / widget.dias.length * 100).round();
@@ -706,7 +706,7 @@ class _DiarioTabState extends State<DiarioTab> {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       child: Column(children: [
         Row(children: [
-          _mini('dias', '${widget.dias.length}', Colors.black87),
+          _mini('dias', '${widget.dias.length}', Theme.of(context).colorScheme.onSurface),
           const SizedBox(width: 6),
           _mini('metas', '$batidas/${widget.dias.length}', const Color(0xFF1D9E75)),
           const SizedBox(width: 6),
@@ -728,11 +728,11 @@ class _DiarioTabState extends State<DiarioTab> {
               ),
               child: Row(children: [
                 Icon(Icons.calendar_today_outlined, size: 15,
-                    color: _filtroData != null ? const Color(0xFF085041) : Colors.black45),
+                    color: _filtroData != null ? const Color(0xFF085041) : Theme.of(ctx).colorScheme.onSurface.withOpacity(0.5)),
                 const SizedBox(width: 8),
                 Text(_filtroData != null ? _fmtDate(_filtroData!) : 'Filtrar por data',
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
-                        color: _filtroData != null ? const Color(0xFF085041) : Colors.black54)),
+                        color: _filtroData != null ? const Color(0xFF085041) : Theme.of(ctx).colorScheme.onSurface.withOpacity(0.6))),
               ]),
             ),
           )),
@@ -742,8 +742,8 @@ class _DiarioTabState extends State<DiarioTab> {
               onTap: () => setState(() => _filtroData = null),
               child: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: const Color(0xFFF1EFE8), borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.close, size: 16, color: Colors.black45),
+                decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.close, size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
               ),
             ),
           ],
@@ -752,9 +752,9 @@ class _DiarioTabState extends State<DiarioTab> {
         if (dias.isEmpty)
           Container(padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.black12, width: 0.5)),
+                border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12), width: 0.5)),
             child: Center(child: Text('Nenhum registro em ${_fmtDate(_filtroData!)}.',
-                style: const TextStyle(color: Colors.black38))))
+                style: const TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38)))))
         else
         ...dias.asMap().entries.map((e) {
           final i = e.key; final d = e.value;
@@ -796,7 +796,7 @@ class _DiarioTabState extends State<DiarioTab> {
                           const Icon(Icons.expand_more, size: 16, color: Color(0xFF1D9E75)),
                         ],
                       ]),
-                      Text(d['semana'] ?? '', style: const TextStyle(fontSize: 10, color: Colors.black38)),
+                      Text(d['semana'] ?? '', style: const TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
                     ]),
                     Row(children: [
                       Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
@@ -809,40 +809,40 @@ class _DiarioTabState extends State<DiarioTab> {
                       const SizedBox(width: 6),
                       GestureDetector(onTap: () => _confirmarExcluir(context, i, d),
                         child: Container(padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(color: const Color(0xFFF1EFE8), borderRadius: BorderRadius.circular(6)),
-                          child: const Icon(Icons.close, size: 13, color: Colors.black38))),
+                          decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(6)),
+                          child: const Icon(Icons.close, size: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38)))),
                     ]),
                   ]),
                   const SizedBox(height: 8),
-                  Container(height: 0.5, color: Colors.black12),
+                  Container(height: 0.5, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12)),
                   const SizedBox(height: 8),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text('total bruto', style: TextStyle(fontSize: 11, color: Colors.black45)),
+                    const Text('total bruto', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
                     Text(_fmt(total), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
                         color: bateu ? const Color(0xFF1D9E75) : const Color(0xFF993C1D))),
                   ]),
                   if (abast > 0) ...[
                     const SizedBox(height: 3),
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      const Text('abastecimento', style: TextStyle(fontSize: 11, color: Colors.black45)),
+                      const Text('abastecimento', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
                       Text('-${_fmt(abast)}', style: const TextStyle(fontSize: 12, color: Color(0xFF993C1D))),
                     ]),
                     const SizedBox(height: 3),
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      const Text('líquido', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.black54)),
+                      const Text('líquido', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
                       Text(_fmt(liquido), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF185FA5))),
                     ]),
                   ],
                   const SizedBox(height: 3),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text('meta do dia', style: TextStyle(fontSize: 11, color: Colors.black45)),
-                    Text(_fmt(meta), style: const TextStyle(fontSize: 12, color: Colors.black87)),
+                    const Text('meta do dia', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                    Text(_fmt(meta), style: const TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface)),
                   ]),
                   const SizedBox(height: 3),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text('viagens · km · horas', style: TextStyle(fontSize: 11, color: Colors.black45)),
+                    const Text('viagens · km · horas', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
                     Text('$viagens${km > 0 ? ' · ${km.toStringAsFixed(0)}km' : ''}${horas > 0 ? ' · ${_fmtH(horas)}' : ''}',
-                        style: const TextStyle(fontSize: 12, color: Colors.black87)),
+                        style: const TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface)),
                   ]),
                   if (km > 0 || horas > 0) ...[
                     const SizedBox(height: 10),
@@ -855,14 +855,14 @@ class _DiarioTabState extends State<DiarioTab> {
                   const SizedBox(height: 10),
                   ClipRRect(borderRadius: BorderRadius.circular(99),
                     child: LinearProgressIndicator(value: pctDia, minHeight: 6,
-                      backgroundColor: const Color(0xFFEEEEEE),
+                      backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
                       color: bateu ? const Color(0xFF1D9E75) : const Color(0xFF993C1D))),
                   const SizedBox(height: 4),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                     Text('${(pctDia * 100).toStringAsFixed(0)}%',
                         style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500,
                             color: bateu ? const Color(0xFF1D9E75) : const Color(0xFF993C1D))),
-                    Text(_fmt(meta), style: const TextStyle(fontSize: 10, color: Colors.black38)),
+                    Text(_fmt(meta), style: const TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
                   ]),
                   if (temHistorico) ...[
                     const SizedBox(height: 8),
@@ -901,14 +901,14 @@ class _DiarioTabState extends State<DiarioTab> {
             onTap: () {},
             child: Container(
               decoration: const BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: Column(children: [
                 Container(
                   margin: const EdgeInsets.only(top: 12),
                   width: 40, height: 4,
-                  decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(99)),
+                  decoration: BoxDecoration(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12), borderRadius: BorderRadius.circular(99)),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(16),
@@ -916,11 +916,11 @@ class _DiarioTabState extends State<DiarioTab> {
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text('${d['data']} · ${d['semana']}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                       Text('${historico.length} viagens · ${fmt((d['total'] as num).toDouble())}',
-                          style: const TextStyle(fontSize: 12, color: Colors.black45)),
+                          style: const TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
                     ])),
                   ]),
                 ),
-                Container(height: 0.5, color: Colors.black12),
+                Container(height: 0.5, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12)),
                 Expanded(child: ListView.builder(
                   controller: ctrl,
                   padding: const EdgeInsets.all(16),
@@ -936,7 +936,7 @@ class _DiarioTabState extends State<DiarioTab> {
                           child: Text('#${i + 1}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF085041))),
                         ),
                         const SizedBox(width: 10),
-                        Text(v['hora']?.toString() ?? '', style: const TextStyle(fontSize: 12, color: Colors.black45)),
+                        Text(v['hora']?.toString() ?? '', style: const TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
                         const Spacer(),
                         Text('+${fmt((v['val'] as num).toDouble())}',
                             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF1D9E75))),
@@ -972,7 +972,7 @@ class _DiarioTabState extends State<DiarioTab> {
           color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFEEEEEA),
           borderRadius: BorderRadius.circular(10)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(fontSize: 9, color: isDark ? Colors.white38 : Colors.black45)),
+          Text(label, style: TextStyle(fontSize: 9, color: Theme.of(ctx).colorScheme.onSurface.withOpacity(0.5))),
           const SizedBox(height: 2),
           Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: color)),
         ]));
@@ -986,7 +986,7 @@ class _DiarioTabState extends State<DiarioTab> {
         color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F0),
         borderRadius: BorderRadius.circular(8)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: TextStyle(fontSize: 9, color: isDark ? Colors.white38 : Colors.black45)),
+        Text(label, style: TextStyle(fontSize: 9, color: Theme.of(ctx).colorScheme.onSurface.withOpacity(0.5))),
         const SizedBox(height: 2),
         Text(val, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF1D9E75))),
       ]));
@@ -1102,14 +1102,14 @@ class _ResumoTabState extends State<ResumoTab> {
               border: Border.all(color: _showCal ? const Color(0xFF5DCAA5) : (isDarkR ? Colors.white12 : Colors.black12), width: 0.5),
             ),
             child: Row(children: [
-              Icon(Icons.calendar_month_outlined, size: 16, color: _showCal ? const Color(0xFF085041) : Colors.black54),
+              Icon(Icons.calendar_month_outlined, size: 16, color: _showCal ? const Color(0xFF085041) : Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
               const SizedBox(width: 8),
               Expanded(child: Text(
                 _inicio != null && _fim != null ? '${_fmtDate(_inicio!)}  →  ${_fmtDate(_fim!)}' : 'Selecionar período',
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
-                    color: _showCal ? const Color(0xFF085041) : Colors.black87),
+                    color: _showCal ? const Color(0xFF085041) : Theme.of(context).colorScheme.onSurface),
               )),
-              Icon(_showCal ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 18, color: Colors.black38),
+              Icon(_showCal ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 18, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38)),
             ]),
           ),
           );
@@ -1136,7 +1136,7 @@ class _ResumoTabState extends State<ResumoTab> {
                       borderRadius: BorderRadius.circular(99),
                     ),
                     child: Text(q.$2, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
-                        color: _quickSel == q.$1 ? Colors.white : Colors.black54)),
+                        color: _quickSel == q.$1 ? Colors.white : Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
                   ))),
           ])),
         const SizedBox(height: 8),
@@ -1146,23 +1146,23 @@ class _ResumoTabState extends State<ResumoTab> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.black12, width: 0.5)),
+                border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12), width: 0.5)),
             child: Column(children: [
               // Header mês
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 GestureDetector(
                   onTap: () => setState(() => _calMes = DateTime(_calMes.year, _calMes.month - 1)),
-                  child: const Padding(padding: EdgeInsets.all(6), child: Icon(Icons.chevron_left, size: 22, color: Colors.black54))),
+                  child: const Padding(padding: EdgeInsets.all(6), child: Icon(Icons.chevron_left, size: 22, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)))),
                 Text('${meses[_calMes.month - 1]} ${_calMes.year}',
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                 GestureDetector(
                   onTap: () => setState(() => _calMes = DateTime(_calMes.year, _calMes.month + 1)),
-                  child: const Padding(padding: EdgeInsets.all(6), child: Icon(Icons.chevron_right, size: 22, color: Colors.black54))),
+                  child: const Padding(padding: EdgeInsets.all(6), child: Icon(Icons.chevron_right, size: 22, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)))),
               ]),
               const SizedBox(height: 10),
               // Nomes dos dias
               Row(children: ['D','S','T','Q','Q','S','S'].map((d) => Expanded(
-                child: Center(child: Text(d, style: const TextStyle(fontSize: 11, color: Colors.black38, fontWeight: FontWeight.w500))))).toList()),
+                child: Center(child: Text(d, style: const TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38), fontWeight: FontWeight.w500))))).toList()),
               const SizedBox(height: 4),
               // Grid
               Builder(builder: (_) {
@@ -1205,10 +1205,10 @@ class _ResumoTabState extends State<ResumoTab> {
               const SizedBox(height: 8),
               if (_tapInicio != null)
                 Text('Toque no dia final do período',
-                    style: const TextStyle(fontSize: 11, color: Colors.black38, fontStyle: FontStyle.italic))
+                    style: const TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38), fontStyle: FontStyle.italic))
               else
                 Text('Toque em dois dias para selecionar o período',
-                    style: const TextStyle(fontSize: 11, color: Colors.black38, fontStyle: FontStyle.italic)),
+                    style: const TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38), fontStyle: FontStyle.italic)),
             ]),
           ),
           const SizedBox(height: 8),
@@ -1219,9 +1219,9 @@ class _ResumoTabState extends State<ResumoTab> {
           if (dias.isEmpty) {
             return Container(padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.black12, width: 0.5)),
+                  border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12), width: 0.5)),
               child: const Center(child: Text('Nenhum dia no período selecionado.',
-                  style: TextStyle(color: Colors.black38))));
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38)))));
           }
           final totalGanho = dias.fold<double>(0, (s, d) => s + (d['total'] as num).toDouble());
           final totalKm = dias.fold<double>(0, (s, d) => s + (d['km'] as num? ?? 0).toDouble());
@@ -1245,7 +1245,7 @@ class _ResumoTabState extends State<ResumoTab> {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: isDark ? Colors.white12 : Colors.black12, width: 0.5)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Total ganho (${dias.length} dias)', style: const TextStyle(fontSize: 12, color: Colors.black45)),
+                Text('Total ganho (${dias.length} dias)', style: const TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
                 const SizedBox(height: 4),
                 Text(_fmt(totalGanho), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w500, color: Color(0xFF1D9E75))),
                 if (totalAbast > 0) ...[
@@ -1262,12 +1262,12 @@ class _ResumoTabState extends State<ResumoTab> {
             GridView.count(crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
               crossAxisSpacing: 8, mainAxisSpacing: 8, childAspectRatio: 2.2,
               children: [
-                _numCard('Dias trabalhados', '${dias.length}', Colors.black87),
+                _numCard('Dias trabalhados', '${dias.length}', Theme.of(context).colorScheme.onSurface),
                 _numCard('Metas batidas', '$batidas de ${dias.length}', const Color(0xFF1D9E75)),
                 _numCard('Aproveitamento', '$pct%', pct >= 70 ? const Color(0xFF1D9E75) : const Color(0xFFBA7517)),
-                _numCard('Total viagens', '$totalViagens', Colors.black87),
+                _numCard('Total viagens', '$totalViagens', Theme.of(context).colorScheme.onSurface),
                 _numCard('Km rodados', '${totalKm.toStringAsFixed(0)} km', const Color(0xFF185FA5)),
-                _numCard('Horas trabalhadas', _fmtH(totalHoras), Colors.black87),
+                _numCard('Horas trabalhadas', _fmtH(totalHoras), Theme.of(context).colorScheme.onSurface),
               ]),
             const SizedBox(height: 8),
             Builder(builder: (ctx) {
@@ -1278,7 +1278,7 @@ class _ResumoTabState extends State<ResumoTab> {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: isDark ? Colors.white12 : Colors.black12, width: 0.5)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Médias do período', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black54)),
+                const Text('Médias do período', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
                 const SizedBox(height: 12),
                 _mediaRow('Ganho por dia', _fmt(mediaDia)),
                 _mediaRow('Ganho por viagem', _fmt(mediaVia)),
@@ -1302,7 +1302,7 @@ class _ResumoTabState extends State<ResumoTab> {
         color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFEEEEEA),
         borderRadius: BorderRadius.circular(12)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: TextStyle(fontSize: 10, color: isDark ? Colors.white38 : Colors.black45)),
+        Text(label, style: TextStyle(fontSize: 10, color: Theme.of(ctx).colorScheme.onSurface.withOpacity(0.5))),
         const SizedBox(height: 4),
         Text(val, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: color)),
       ]));
@@ -1311,7 +1311,7 @@ class _ResumoTabState extends State<ResumoTab> {
   Widget _mediaRow(String label, String val) => Padding(
     padding: const EdgeInsets.only(bottom: 10),
     child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      Text(label, style: const TextStyle(fontSize: 13, color: Colors.black54)),
-      Text(val, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black87)),
+      Text(label, style: const TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+      Text(val, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface)),
     ]));
 }
