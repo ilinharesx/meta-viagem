@@ -8,16 +8,23 @@ void main() {
   runApp(const MetaViagemApp());
 }
 
+final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.light);
+
 class MetaViagemApp extends StatelessWidget {
   const MetaViagemApp({super.key});
   @override
-  Widget build(BuildContext context) => MaterialApp(
-    title: 'Meta Viagem',
-    debugShowCheckedModeBanner: false,
-    theme: ThemeData(colorSchemeSeed: const Color(0xFF1D9E75), useMaterial3: true),
-    localizationsDelegates: GlobalMaterialLocalizations.delegates,
-    supportedLocales: const [Locale('pt', 'BR'), Locale('en')],
-    home: const RootPage(),
+  Widget build(BuildContext context) => ValueListenableBuilder<ThemeMode>(
+    valueListenable: themeModeNotifier,
+    builder: (_, mode, __) => MaterialApp(
+      title: 'Meta Viagem',
+      debugShowCheckedModeBanner: false,
+      themeMode: mode,
+      theme: ThemeData(colorSchemeSeed: const Color(0xFF1D9E75), useMaterial3: true, brightness: Brightness.light),
+      darkTheme: ThemeData(colorSchemeSeed: const Color(0xFF1D9E75), useMaterial3: true, brightness: Brightness.dark),
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      supportedLocales: const [Locale('pt', 'BR'), Locale('en')],
+      home: const RootPage(),
+    ),
   );
 }
 
@@ -82,8 +89,19 @@ class _RootPageState extends State<RootPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F0),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF5F5F0),
         title: const Text('Meta Viagem', style: TextStyle(fontWeight: FontWeight.w500)),
+        actions: [
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: themeModeNotifier,
+            builder: (_, mode, __) => IconButton(
+              icon: Icon(mode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
+              tooltip: mode == ThemeMode.dark ? 'Modo claro' : 'Modo escuro',
+              onPressed: () {
+                themeModeNotifier.value = mode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+              },
+            ),
+          ),
+        ],
       ),
       body: Column(children: [
         Padding(padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -142,6 +160,7 @@ class _HojeTabState extends State<HojeTab> {
   late double _atual, _meta, _abast;
   late List<Map<String, dynamic>> _viagens;
   bool _modoTotal = false;
+  bool _ehPromocao = false;
   // controllers
   final _corridaCtrl = TextEditingController();
   final _metaCtrl = TextEditingController();
@@ -175,12 +194,24 @@ class _HojeTabState extends State<HojeTab> {
   double get _pct => _meta > 0 ? (_atual / _meta).clamp(0, 1) : 0;
   double get _falta => (_meta - _atual).clamp(0, double.infinity);
   double get _liquido => (_atual - _abast).clamp(0, double.infinity);
-  double get _media => _viagens.isEmpty ? 0 : _atual / _viagens.length;
+  double get _media {
+    final normais = _viagens.where((v) => v['promo'] != true).toList();
+    return normais.isEmpty ? 0 : _atual / normais.length;
+  }
 
   void _addViagem() {
     final val = double.tryParse(_corridaCtrl.text.replaceAll(',', '.'));
     if (val == null || val <= 0) return;
-    setState(() { _atual += val; _viagens.add({'val': val, 'hora': TimeOfDay.now().format(context)}); });
+    final isPromo = _ehPromocao;
+    setState(() {
+      if (!isPromo) _atual += val; // promos não contam no saldo
+      _viagens.add({
+        'val': val,
+        'hora': TimeOfDay.now().format(context),
+        'promo': isPromo,
+      });
+      _ehPromocao = false; // reset após adicionar
+    });
     _corridaCtrl.clear(); _notify();
   }
 
@@ -390,6 +421,35 @@ class _HojeTabState extends State<HojeTab> {
               Expanded(child: _inputField(_metaCtrl, 'Meta (R\$)', '500')),
             ]),
             const SizedBox(height: 8),
+            // Checkbox promoção
+            GestureDetector(
+              onTap: () => setState(() => _ehPromocao = !_ehPromocao),
+              child: Row(children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 20, height: 20,
+                  decoration: BoxDecoration(
+                    color: _ehPromocao ? const Color(0xFFBA7517) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(5),
+                    border: Border.all(
+                      color: _ehPromocao ? const Color(0xFFBA7517) : Colors.black26,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: _ehPromocao
+                    ? const Icon(Icons.check, size: 14, color: Colors.white)
+                    : null,
+                ),
+                const SizedBox(width: 8),
+                Text('É promoção/bônus',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
+                    color: _ehPromocao ? const Color(0xFFBA7517) : Colors.black45)),
+                const SizedBox(width: 6),
+                Text('(não conta no saldo)',
+                  style: const TextStyle(fontSize: 11, color: Colors.black38)),
+              ]),
+            ),
+            const SizedBox(height: 8),
             Row(children: [
               Expanded(child: _btn('+ Viagem', const Color(0xFF1D9E75), Colors.white, _addViagem)),
               const SizedBox(width: 6),
@@ -470,25 +530,37 @@ class _HojeTabState extends State<HojeTab> {
         // Histórico (só no modo uma por uma)
         if (!_modoTotal && _viagens.isNotEmpty)
           _card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Text('Viagens de hoje', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black54)),
-              Text('${_viagens.length} · ${_fmt(_media)}/viagem',
-                  style: const TextStyle(fontSize: 11, color: Colors.black38)),
-            ]),
+            Builder(builder: (_) {
+              final normais = _viagens.where((v) => v['promo'] != true).length;
+              final promos = _viagens.where((v) => v['promo'] == true).length;
+              return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                const Text('Viagens de hoje', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black54)),
+                Text('$normais viagens${promos > 0 ? ' · $promos promo' : ''} · ${_fmt(_media)}/viag.',
+                    style: const TextStyle(fontSize: 11, color: Colors.black38)),
+              ]);
+            }),
             const SizedBox(height: 10),
             ..._viagens.reversed.take(30).toList().asMap().entries.map((e) {
               final orig = _viagens.length - 1 - e.key;
               final v = e.value;
+              final isPromo = v['promo'] == true;
+              // numero sequencial só de viagens normais
+              final numNormal = isPromo ? 0 : _viagens.sublist(0, orig + 1).where((x) => x['promo'] != true).length;
               return Padding(padding: const EdgeInsets.only(bottom: 6),
                 child: Row(children: [
-                  Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(color: const Color(0xFF9FE1CB), borderRadius: BorderRadius.circular(99)),
-                    child: Text('#${orig + 1}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF085041)))),
+                  isPromo
+                    ? Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(color: const Color(0xFFFAEEDA), borderRadius: BorderRadius.circular(99)),
+                        child: const Text('promo', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: Color(0xFF854F0B))))
+                    : Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(color: const Color(0xFF9FE1CB), borderRadius: BorderRadius.circular(99)),
+                        child: Text('#$numNormal', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF085041)))),
                   const SizedBox(width: 8),
                   Text(v['hora'] ?? '', style: const TextStyle(fontSize: 11, color: Colors.black38)),
                   const Spacer(),
                   Text('+${_fmt((v['val'] as num).toDouble())}',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF1D9E75))),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
+                          color: isPromo ? const Color(0xFFBA7517) : const Color(0xFF1D9E75))),
                   const SizedBox(width: 8),
                   GestureDetector(onTap: () => _removeViagem(orig),
                     child: Container(padding: const EdgeInsets.all(4),
