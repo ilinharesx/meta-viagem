@@ -874,10 +874,9 @@ class _DiarioTabState extends State<DiarioTab> {
                         Text('toque para ver o histórico de viagens', style: TextStyle(fontSize: 10, color: Color(0xFF085041))),
                       ])),
                   ],
-                ])),
-              );
+                ]));
             }),
-          ));
+            ));
         }),
       ]),
     );
