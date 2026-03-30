@@ -31,12 +31,20 @@ class RootPage extends StatefulWidget {
 
 class _RootPageState extends State<RootPage> {
   int _tab = 0;
+  late PageController _pageCtrl;
   double _atual = 0, _meta = 500, _abastecimento = 0;
   List<Map<String, dynamic>> _viagens = [];
   List<Map<String, dynamic>> _dias = [];
 
   @override
-  void initState() { super.initState(); _load(); }
+  void initState() {
+    super.initState();
+    _pageCtrl = PageController(initialPage: 0);
+    _load();
+  }
+
+  @override
+  void dispose() { _pageCtrl.dispose(); super.dispose(); }
 
   Future<void> _load() async {
     final p = await SharedPreferences.getInstance();
@@ -84,7 +92,10 @@ class _RootPageState extends State<RootPage> {
             padding: const EdgeInsets.all(3),
             child: Row(children: List.generate(3, (i) => Expanded(
               child: GestureDetector(
-                onTap: () => setState(() => _tab = i),
+                onTap: () {
+                  setState(() => _tab = i);
+                  _pageCtrl.animateToPage(i, duration: const Duration(milliseconds: 250), curve: Curves.easeInOut);
+                },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(vertical: 8),
@@ -100,12 +111,16 @@ class _RootPageState extends State<RootPage> {
             ))),
           )),
         const SizedBox(height: 12),
-        Expanded(child: _tab == 0
-          ? HojeTab(atual: _atual, meta: _meta, abastecimento: _abastecimento, viagens: _viagens,
-              onChanged: _onHojeChanged, onEncerrarDia: _onEncerrarDia)
-          : _tab == 1
-          ? DiarioTab(dias: _dias, onDeleteDia: (i) { setState(() => _dias.removeAt(i)); _save(); })
-          : ResumoTab(dias: _dias)),
+        Expanded(child: PageView(
+          controller: _pageCtrl,
+          onPageChanged: (i) => setState(() => _tab = i),
+          children: [
+            HojeTab(atual: _atual, meta: _meta, abastecimento: _abastecimento, viagens: _viagens,
+                onChanged: _onHojeChanged, onEncerrarDia: _onEncerrarDia),
+            DiarioTab(dias: _dias, onDeleteDia: (i) { setState(() => _dias.removeAt(i)); _save(); }),
+            ResumoTab(dias: _dias),
+          ],
+        )),
       ]),
     );
   }
@@ -534,36 +549,102 @@ class _HojeTabState extends State<HojeTab> {
 
 // ─── ABA DIÁRIO ───────────────────────────────────────────────────────────────
 
-class DiarioTab extends StatelessWidget {
+class DiarioTab extends StatefulWidget {
   final List<Map<String, dynamic>> dias;
   final Function(int) onDeleteDia;
   const DiarioTab({super.key, required this.dias, required this.onDeleteDia});
+  @override State<DiarioTab> createState() => _DiarioTabState();
+}
+
+class _DiarioTabState extends State<DiarioTab> {
+  DateTime? _filtroData;
 
   String _fmt(double v) => 'R\$ ${v.toStringAsFixed(2).replaceAll('.', ',')}';
   String _fmtH(double h) { final hh = h.floor(); final mm = ((h-hh)*60).round(); return mm > 0 ? '${hh}h${mm.toString().padLeft(2,'0')}' : '${hh}h'; }
+  String _fmtDate(DateTime d) => '${d.day.toString().padLeft(2,'0')}/${d.month.toString().padLeft(2,'0')}/${d.year}';
+
+  List<Map<String, dynamic>> get _diasFiltrados {
+    if (_filtroData == null) return widget.dias;
+    final alvo = _fmtDate(_filtroData!);
+    return widget.dias.where((d) => (d['data'] as String? ?? '') == alvo).toList();
+  }
+
+  Future<void> _selecionarFiltro() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _filtroData ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      locale: const Locale('pt', 'BR'),
+    );
+    if (picked != null) setState(() => _filtroData = picked);
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (dias.isEmpty) return const Center(child: Text('Nenhum dia registrado ainda.\nEncerre o primeiro dia na aba Hoje!',
+    final dias = _diasFiltrados;
+
+    if (widget.dias.isEmpty) return const Center(child: Text('Nenhum dia registrado ainda.\nEncerre o primeiro dia na aba Hoje!',
         textAlign: TextAlign.center, style: TextStyle(color: Colors.black38, fontSize: 14)));
 
-    final batidas = dias.where((d) => d['bateu'] == true).length;
-    final pct = (batidas / dias.length * 100).round();
-    final kmTotal = dias.fold<double>(0, (s, d) => s + (d['km'] as num? ?? 0).toDouble());
+    final batidas = widget.dias.where((d) => d['bateu'] == true).length;
+    final pct = (batidas / widget.dias.length * 100).round();
+    final kmTotal = widget.dias.fold<double>(0, (s, d) => s + (d['km'] as num? ?? 0).toDouble());
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       child: Column(children: [
         Row(children: [
-          _mini('dias', '${dias.length}', Colors.black87),
+          _mini('dias', '${widget.dias.length}', Colors.black87),
           const SizedBox(width: 6),
-          _mini('metas', '$batidas/${dias.length}', const Color(0xFF1D9E75)),
+          _mini('metas', '$batidas/${widget.dias.length}', const Color(0xFF1D9E75)),
           const SizedBox(width: 6),
           _mini('aproveit.', '$pct%', const Color(0xFFBA7517)),
           const SizedBox(width: 6),
           _mini('km total', '${kmTotal.toStringAsFixed(0)}', const Color(0xFF185FA5)),
         ]),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
+        // Filtro de data
+        Row(children: [
+          Expanded(child: GestureDetector(
+            onTap: _selecionarFiltro,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+              decoration: BoxDecoration(
+                color: _filtroData != null ? const Color(0xFFE1F5EE) : Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: _filtroData != null ? const Color(0xFF5DCAA5) : Colors.black12, width: 0.5),
+              ),
+              child: Row(children: [
+                Icon(Icons.calendar_today_outlined, size: 15,
+                    color: _filtroData != null ? const Color(0xFF085041) : Colors.black45),
+                const SizedBox(width: 8),
+                Text(_filtroData != null ? _fmtDate(_filtroData!) : 'Filtrar por data',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
+                        color: _filtroData != null ? const Color(0xFF085041) : Colors.black54)),
+              ]),
+            ),
+          )),
+          if (_filtroData != null) ...[
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => setState(() => _filtroData = null),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: const Color(0xFFF1EFE8), borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.close, size: 16, color: Colors.black45),
+              ),
+            ),
+          ],
+        ]),
+        const SizedBox(height: 10),
+        if (dias.isEmpty)
+          Container(padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.black12, width: 0.5)),
+            child: Center(child: Text('Nenhum registro em ${_fmtDate(_filtroData!)}.',
+                style: const TextStyle(color: Colors.black38))))
+        else
         ...dias.asMap().entries.map((e) {
           final i = e.key; final d = e.value;
           final total = (d['total'] as num).toDouble();
@@ -690,10 +771,17 @@ class DiarioTab extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => DraggableScrollableSheet(
+      builder: (_) => GestureDetector(
+        onTap: () => Navigator.pop(context),
+        behavior: HitTestBehavior.opaque,
+        child: DraggableScrollableSheet(
         initialChildSize: 0.6, maxChildSize: 0.9, minChildSize: 0.3,
-        builder: (_, ctrl) => Container(
+        builder: (_, ctrl) => GestureDetector(
+          onTap: () {}, // absorb taps inside sheet
+          child: Container(
           decoration: const BoxDecoration(color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
           child: Column(children: [
@@ -739,7 +827,7 @@ class DiarioTab extends StatelessWidget {
       content: Text('O registro de ${d['data']} será apagado.'),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-        TextButton(onPressed: () { onDeleteDia(i); Navigator.pop(context); },
+        TextButton(onPressed: () { widget.onDeleteDia(i); Navigator.pop(context); },
             child: const Text('Excluir', style: TextStyle(color: Colors.red))),
       ],
     ));
