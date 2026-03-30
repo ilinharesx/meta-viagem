@@ -87,9 +87,9 @@ class _RootPageState extends State<RootPage> {
   Widget build(BuildContext context) {
     final tabs = ['Hoje', 'Diário', 'Resumo'];
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F0),
       appBar: AppBar(
         title: const Text('Meta Viagem', style: TextStyle(fontWeight: FontWeight.w500)),
+        scrolledUnderElevation: 0,
         actions: [
           ValueListenableBuilder<ThemeMode>(
             valueListenable: themeModeNotifier,
@@ -104,30 +104,37 @@ class _RootPageState extends State<RootPage> {
         ],
       ),
       body: Column(children: [
-        Padding(padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Container(
-            decoration: BoxDecoration(color: const Color(0xFFE8E8E2), borderRadius: BorderRadius.circular(10)),
-            padding: const EdgeInsets.all(3),
-            child: Row(children: List.generate(3, (i) => Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() => _tab = i);
-                  _pageCtrl.animateToPage(i, duration: const Duration(milliseconds: 250), curve: Curves.easeInOut);
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: _tab == i ? Colors.white : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
+        Builder(builder: (ctx) {
+          final isDark = Theme.of(ctx).brightness == Brightness.dark;
+          return Padding(padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE8E8E2),
+                borderRadius: BorderRadius.circular(10)),
+              padding: const EdgeInsets.all(3),
+              child: Row(children: List.generate(3, (i) => Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() => _tab = i);
+                    _pageCtrl.animateToPage(i, duration: const Duration(milliseconds: 250), curve: Curves.easeInOut);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _tab == i ? (isDark ? const Color(0xFF3A3A3A) : Colors.white) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(tabs[i], textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
+                            color: _tab == i
+                              ? (isDark ? Colors.white : Colors.black87)
+                              : (isDark ? Colors.white38 : Colors.black45))),
                   ),
-                  child: Text(tabs[i], textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
-                          color: _tab == i ? Colors.black87 : Colors.black45)),
                 ),
-              ),
-            ))),
-          )),
+              ))),
+            ));
+        }),
         const SizedBox(height: 12),
         Expanded(child: PageView(
           controller: _pageCtrl,
@@ -204,13 +211,13 @@ class _HojeTabState extends State<HojeTab> {
     if (val == null || val <= 0) return;
     final isPromo = _ehPromocao;
     setState(() {
-      if (!isPromo) _atual += val; // promos não contam no saldo
+      _atual += val; // promo CONTA no saldo
       _viagens.add({
         'val': val,
         'hora': TimeOfDay.now().format(context),
         'promo': isPromo,
       });
-      _ehPromocao = false; // reset após adicionar
+      _ehPromocao = false;
     });
     _corridaCtrl.clear(); _notify();
   }
@@ -363,6 +370,7 @@ class _HojeTabState extends State<HojeTab> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       child: Column(children: [
@@ -374,7 +382,7 @@ class _HojeTabState extends State<HojeTab> {
           const SizedBox(width: 6),
           _statCard('Líquido', _fmt(_liquido), const Color(0xFF185FA5)),
           const SizedBox(width: 6),
-          _statCard('Viagens', '${_viagens.length}', Colors.black87),
+          _statCard('Viagens', '${_viagens.where((v) => v['promo'] != true).length}', Colors.black87),
         ]),
         const SizedBox(height: 12),
 
@@ -512,15 +520,21 @@ class _HojeTabState extends State<HojeTab> {
           const SizedBox(height: 12),
           Container(height: 0.5, color: Colors.black12),
           const SizedBox(height: 12),
-          GestureDetector(
-            onTap: _encerrarDia,
-            child: Container(
-              width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 13),
-              decoration: BoxDecoration(color: const Color(0xFF1D9E75), borderRadius: BorderRadius.circular(10)),
-              child: const Center(child: Text('+ Encerrar dia e salvar',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.white))),
-            ),
-          ),
+          Builder(builder: (ctx) {
+            final dark = Theme.of(ctx).brightness == Brightness.dark;
+            return GestureDetector(
+              onTap: _encerrarDia,
+              child: Container(
+                width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 13),
+                decoration: BoxDecoration(
+                  color: dark ? Colors.white : const Color(0xFF1D9E75),
+                  borderRadius: BorderRadius.circular(10)),
+                child: Center(child: Text('+ Encerrar dia e salvar',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500,
+                        color: dark ? Colors.black : Colors.white))),
+              ),
+            );
+          }),
           const SizedBox(height: 6),
           const Center(child: Text('salva no Diário e zera o contador de hoje',
               style: TextStyle(fontSize: 11, color: Colors.black38))),
@@ -582,20 +596,30 @@ class _HojeTabState extends State<HojeTab> {
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
                 color: active ? Colors.black87 : Colors.black45)))));
 
-  Widget _card(Widget child) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black12, width: 0.5)),
-    child: child);
+  Widget _card(Widget child) => Builder(builder: (ctx) {
+    final isDark = Theme.of(ctx).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF252525) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? const Color(0x22FFFFFF) : Colors.black12, width: 0.5)),
+      child: child);
+  });
 
   Widget _statCard(String label, String value, Color color) => Expanded(
-    child: Container(padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(color: const Color(0xFFEEEEEE), borderRadius: BorderRadius.circular(10)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: const TextStyle(fontSize: 9, color: Colors.black45)),
-        const SizedBox(height: 2),
-        Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: color)),
-      ])));
+    child: Builder(builder: (ctx) {
+      final isDark = Theme.of(ctx).brightness == Brightness.dark;
+      return Container(padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFEEEEEE),
+          borderRadius: BorderRadius.circular(10)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: TextStyle(fontSize: 9, color: isDark ? Colors.white38 : Colors.black45)),
+          const SizedBox(height: 2),
+          Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: color)),
+        ]));
+    }));
 
   Widget _inputField(TextEditingController ctrl, String label, String hint) =>
     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -612,11 +636,26 @@ class _HojeTabState extends State<HojeTab> {
     ]);
 
   Widget _btn(String label, Color bg, Color fg, VoidCallback onTap, {Color border = Colors.transparent}) =>
-    GestureDetector(onTap: onTap,
-      child: Container(padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: border, width: 0.5)),
-        child: Center(child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: fg)))));
+    Builder(builder: (ctx) {
+      final isDark = Theme.of(ctx).brightness == Brightness.dark;
+      // green button becomes white in dark, outline buttons adapt
+      Color effectiveBg = bg;
+      Color effectiveFg = fg;
+      Color effectiveBorder = border;
+      if (bg == const Color(0xFF1D9E75)) {
+        effectiveBg = isDark ? Colors.white : const Color(0xFF1D9E75);
+        effectiveFg = isDark ? Colors.black : Colors.white;
+      } else if (bg == Colors.white) {
+        effectiveBg = isDark ? const Color(0xFF2A2A2A) : Colors.white;
+        effectiveFg = isDark ? Colors.white70 : fg;
+        effectiveBorder = isDark ? Colors.white24 : border;
+      }
+      return GestureDetector(onTap: onTap,
+        child: Container(padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(color: effectiveBg, borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: effectiveBorder, width: 0.5)),
+          child: Center(child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: effectiveFg)))));
+    });
 }
 
 // ─── ABA DIÁRIO ───────────────────────────────────────────────────────────────
@@ -737,12 +776,16 @@ class _DiarioTabState extends State<DiarioTab> {
           return Padding(padding: const EdgeInsets.only(bottom: 10),
             child: GestureDetector(
               onTap: temHistorico ? () => _abrirHistorico(context, d, historico) : null,
-              child: Container(padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: temHistorico ? const Color(0xFF9FE1CB) : Colors.black12,
-                      width: temHistorico ? 1.0 : 0.5,
-                    )),
+              child: Builder(builder: (ctx) {
+              final isDark = Theme.of(ctx).brightness == Brightness.dark;
+              return Container(padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF252525) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: temHistorico ? const Color(0xFF9FE1CB) : (isDark ? Colors.white12 : Colors.black12),
+                    width: temHistorico ? 1.0 : 0.5,
+                  )),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -832,6 +875,8 @@ class _DiarioTabState extends State<DiarioTab> {
                       ])),
                   ],
                 ])),
+              );
+            }),
             ));
         }),
       ]),
@@ -921,22 +966,32 @@ class _DiarioTabState extends State<DiarioTab> {
   }
 
   Widget _mini(String label, String val, Color color) => Expanded(
-    child: Container(padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(color: const Color(0xFFEEEEEA), borderRadius: BorderRadius.circular(10)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: const TextStyle(fontSize: 9, color: Colors.black45)),
-        const SizedBox(height: 2),
-        Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: color)),
-      ])));
+    child: Builder(builder: (ctx) {
+      final isDark = Theme.of(ctx).brightness == Brightness.dark;
+      return Container(padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFEEEEEA),
+          borderRadius: BorderRadius.circular(10)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: TextStyle(fontSize: 9, color: isDark ? Colors.white38 : Colors.black45)),
+          const SizedBox(height: 2),
+          Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: color)),
+        ]));
+    }));
 
-  Widget _mediaCard(String label, String val) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-    decoration: BoxDecoration(color: const Color(0xFFF5F5F0), borderRadius: BorderRadius.circular(8)),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontSize: 9, color: Colors.black45)),
-      const SizedBox(height: 2),
-      Text(val, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF1D9E75))),
-    ]));
+  Widget _mediaCard(String label, String val) => Builder(builder: (ctx) {
+    final isDark = Theme.of(ctx).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F0),
+        borderRadius: BorderRadius.circular(8)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: TextStyle(fontSize: 9, color: isDark ? Colors.white38 : Colors.black45)),
+        const SizedBox(height: 2),
+        Text(val, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF1D9E75))),
+      ]));
+  });
 }
 
 // ─── ABA RESUMO ───────────────────────────────────────────────────────────────
@@ -1036,14 +1091,16 @@ class _ResumoTabState extends State<ResumoTab> {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       child: Column(children: [
         // Botão filtro
-        GestureDetector(
+        Builder(builder: (ctx) {
+          final isDarkR = Theme.of(ctx).brightness == Brightness.dark;
+          return GestureDetector(
           onTap: () => setState(() => _showCal = !_showCal),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: _showCal ? const Color(0xFFE1F5EE) : Colors.white,
+              color: _showCal ? const Color(0xFFE1F5EE) : (isDarkR ? const Color(0xFF252525) : Colors.white),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: _showCal ? const Color(0xFF5DCAA5) : Colors.black12, width: 0.5),
+              border: Border.all(color: _showCal ? const Color(0xFF5DCAA5) : (isDarkR ? Colors.white12 : Colors.black12), width: 0.5),
             ),
             child: Row(children: [
               Icon(Icons.calendar_month_outlined, size: 16, color: _showCal ? const Color(0xFF085041) : Colors.black54),
@@ -1056,7 +1113,8 @@ class _ResumoTabState extends State<ResumoTab> {
               Icon(_showCal ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 18, color: Colors.black38),
             ]),
           ),
-        ),
+          );
+        }),
         const SizedBox(height: 8),
 
         // Chips de atalho — sem 60 e 90, com "Todo período" e "Anual"
@@ -1180,9 +1238,13 @@ class _ResumoTabState extends State<ResumoTab> {
           final liquido = totalGanho - totalAbast;
 
           return Column(children: [
-            Container(width: double.infinity, padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.black12, width: 0.5)),
+            Builder(builder: (ctx) {
+              final isDark = Theme.of(ctx).brightness == Brightness.dark;
+              return Container(width: double.infinity, padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF252525) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: isDark ? Colors.white12 : Colors.black12, width: 0.5)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('Total ganho (${dias.length} dias)', style: const TextStyle(fontSize: 12, color: Colors.black45)),
                 const SizedBox(height: 4),
@@ -1195,7 +1257,8 @@ class _ResumoTabState extends State<ResumoTab> {
                     Text('líquido: ${_fmt(liquido)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF185FA5))),
                   ]),
                 ],
-              ])),
+              ]));
+            }),
             const SizedBox(height: 8),
             GridView.count(crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
               crossAxisSpacing: 8, mainAxisSpacing: 8, childAspectRatio: 2.2,
@@ -1208,9 +1271,13 @@ class _ResumoTabState extends State<ResumoTab> {
                 _numCard('Horas trabalhadas', _fmtH(totalHoras), Colors.black87),
               ]),
             const SizedBox(height: 8),
-            Container(padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.black12, width: 0.5)),
+            Builder(builder: (ctx) {
+              final isDark = Theme.of(ctx).brightness == Brightness.dark;
+              return Container(padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF252525) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: isDark ? Colors.white12 : Colors.black12, width: 0.5)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 const Text('Médias do período', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black54)),
                 const SizedBox(height: 12),
@@ -1220,21 +1287,27 @@ class _ResumoTabState extends State<ResumoTab> {
                 if (totalKm > 0) _mediaRow('Ganho por km', 'R\$ ${mediaKm.toStringAsFixed(2).replaceAll('.', ',')}/km'),
                 if (totalAbast > 0) _mediaRow('Líquido por dia', _fmt(liquido / dias.length)),
                 if (totalViagens > 0) _mediaRow('Viagens por dia', (totalViagens / dias.length).toStringAsFixed(1)),
-              ])),
+              ]));
+            }),
           ]);
         }),
       ]),
     );
   }
 
-  Widget _numCard(String label, String val, Color color) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(color: const Color(0xFFEEEEEA), borderRadius: BorderRadius.circular(12)),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontSize: 10, color: Colors.black45)),
-      const SizedBox(height: 4),
-      Text(val, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: color)),
-    ]));
+  Widget _numCard(String label, String val, Color color) => Builder(builder: (ctx) {
+    final isDark = Theme.of(ctx).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFEEEEEA),
+        borderRadius: BorderRadius.circular(12)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: TextStyle(fontSize: 10, color: isDark ? Colors.white38 : Colors.black45)),
+        const SizedBox(height: 4),
+        Text(val, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: color)),
+      ]));
+  });
 
   Widget _mediaRow(String label, String val) => Padding(
     padding: const EdgeInsets.only(bottom: 10),
