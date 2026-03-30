@@ -877,7 +877,7 @@ class _DiarioTabState extends State<DiarioTab> {
                 ])),
               );
             }),
-            ));
+          ));
         }),
       ]),
     );
