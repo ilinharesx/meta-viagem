@@ -397,11 +397,11 @@ class _HojeTabState extends State<HojeTab> {
           const SizedBox(height: 10),
           ClipRRect(borderRadius: BorderRadius.circular(99),
             child: LinearProgressIndicator(value: _pct, minHeight: 10,
-                backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1), color: const Color(0xFF1D9E75))),
+                backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1), color: Color(0xFF1D9E75))),
           const SizedBox(height: 6),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text('${(_pct * 100).toStringAsFixed(0)}%',
-                style: const TextStyle(fontSize: 11, color: Color(0xFF1D9E75), fontWeight: FontWeight.w500)),
+                style: TextStyle(fontSize: 11, color: Color(0xFF1D9E75), fontWeight: FontWeight.w500)),
             Text(_fmt(_meta), style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
           ]),
         ])),
@@ -440,7 +440,7 @@ class _HojeTabState extends State<HojeTab> {
                     color: _ehPromocao ? const Color(0xFFBA7517) : Colors.transparent,
                     borderRadius: BorderRadius.circular(5),
                     border: Border.all(
-                      color: _ehPromocao ? const Color(0xFFBA7517) : Theme.of(context).colorScheme.onSurface.withOpacity(0.26),
+                      color: _ehPromocao ? Color(0xFFBA7517) : Theme.of(context).colorScheme.onSurface.withOpacity(0.26),
                       width: 1.5,
                     ),
                   ),
@@ -451,7 +451,57 @@ class _HojeTabState extends State<HojeTab> {
                 const SizedBox(width: 8),
                 Text('É promoção/bônus',
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
-                    color: _ehPromocao ? const Color(0xFFBA7517) : Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                    color: _ehPromocao ? Color(0xFFBA7517) : Theme.of(context).colorScheme.onSurfacTextStyle(fontSize: 11, color: Color(0xFF1D9E75), fontWeight: FontWeight.w500)),
+            Text(_fmt(_meta), style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+          ]),
+        ])),
+        const SizedBox(height: 12),
+
+        // Registrar viagens com toggle
+        _card(Column(children: [
+          const Align(alignment: Alignment.centerLeft,
+            child: Text('Registrar viagens', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)))),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(color: const Color(0xFFEEEEEE), borderRadius: BorderRadius.circular(8)),
+            padding: const EdgeInsets.all(3),
+            child: Row(children: [
+              _toggleBtn('Uma por uma', !_modoTotal, () => setState(() => _modoTotal = false)),
+              _toggleBtn('Total do dia', _modoTotal, () => setState(() => _modoTotal = true)),
+            ]),
+          ),
+          const SizedBox(height: 10),
+
+          if (!_modoTotal) ...[
+            Row(children: [
+              Expanded(child: _inputField(_corridaCtrl, 'Valor da viagem (R\$)', '18.50')),
+              const SizedBox(width: 8),
+              Expanded(child: _inputField(_metaCtrl, 'Meta (R\$)', '500')),
+            ]),
+            const SizedBox(height: 8),
+            // Checkbox promoção
+            GestureDetector(
+              onTap: () => setState(() => _ehPromocao = !_ehPromocao),
+              child: Row(children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 20, height: 20,
+                  decoration: BoxDecoration(
+                    color: _ehPromocao ? const Color(0xFFBA7517) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(5),
+                    border: Border.all(
+                      color: _ehPromocao ? Color(0xFFBA7517) : Theme.of(context).colorScheme.onSurface.withOpacity(0.26),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: _ehPromocao
+                    ? const Icon(Icons.check, size: 14, color: Colors.white)
+                    : null,
+                ),
+                const SizedBox(width: 8),
+                Text('É promoção/bônus',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
+                    color: _ehPromocao ? Color(0xFFBA7517) : Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
                 const SizedBox(width: 6),
                 Text('(não conta no saldo)',
                   style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
@@ -568,7 +618,12 @@ class _HojeTabState extends State<HojeTab> {
                         child: const Text('promo', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: Color(0xFF854F0B))))
                     : Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(color: const Color(0xFF9FE1CB), borderRadius: BorderRadius.circular(99)),
-                        child: Text('#$numNormal', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF085041)))),
+                        child: Text('#$numNormal', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF085041)))),
+                  const SizedBox(width: 8),
+                  Text(v['hora'] ?? '', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
+                  const Spacer(),
+                  Text('+${_fmt((v['val'] as num).toDouble())}',
+                 TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF085041)))),
                   const SizedBox(width: 8),
                   Text(v['hora'] ?? '', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
                   const Spacer(),
@@ -728,11 +783,11 @@ class _DiarioTabState extends State<DiarioTab> {
               ),
               child: Row(children: [
                 Icon(Icons.calendar_today_outlined, size: 15,
-                    color: _filtroData != null ? const Color(0xFF085041) : Theme.of(ctx).colorScheme.onSurface.withOpacity(0.5)),
+                    color: _filtroData != null ? Color(0xFF085041) : Theme.of(ctx).colorScheme.onSurface.withOpacity(0.5)),
                 const SizedBox(width: 8),
                 Text(_filtroData != null ? _fmtDate(_filtroData!) : 'Filtrar por data',
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
-                        color: _filtroData != null ? const Color(0xFF085041) : Theme.of(ctx).colorScheme.onSurface.withOpacity(0.6))),
+                        color: _filtroData != null ? Color(0xFF085041) : Theme.of(ctx).colorScheme.onSurface.withOpacity(0.6))),
               ]),
             ),
           )),
@@ -743,7 +798,7 @@ class _DiarioTabState extends State<DiarioTab> {
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.close, size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                child: Icon(Icons.close, size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
               ),
             ),
           ],
@@ -810,7 +865,7 @@ class _DiarioTabState extends State<DiarioTab> {
                       GestureDetector(onTap: () => _confirmarExcluir(context, i, d),
                         child: Container(padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(6)),
-                          child: const Icon(Icons.close, size: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38)))),
+                          child: Icon(Icons.close, size: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38)))),
                     ]),
                   ]),
                   const SizedBox(height: 8),
@@ -914,7 +969,7 @@ class _DiarioTabState extends State<DiarioTab> {
                   padding: const EdgeInsets.all(16),
                   child: Row(children: [
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('${d['data']} · ${d['semana']}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                      Text('${d['data']} · ${d['semana']}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                       Text('${historico.length} viagens · ${fmt((d['total'] as num).toDouble())}',
                           style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
                     ])),
@@ -960,6 +1015,144 @@ class _DiarioTabState extends State<DiarioTab> {
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
         TextButton(onPressed: () { widget.onDeleteDia(i); Navigator.pop(context); },
             child: const Text('Excluir', style: TextStyle(color: Colors.red))),
+      ],
+    ));
+  }
+
+  Widget _mini(String label, String val, Color color) => Expanded(
+    child: Builder(builder: (ctx) {
+      final isDark = Theme.of(ctx).brightness == Brightness.dark;
+      return Container(padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFEEEEEA),
+          borderRadius: BorderRadius.circular(10)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: TextStyle(fontSize: 9, color: Theme.of(ctx).colorScheme.onSurface.withOpacity(0.5))),
+          const SizedBox(height: 2),
+          Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: color)),
+        ]));
+    }));
+
+  Widget _mediaCard(String label, String val) => Builder(builder: (ctx) {
+    final isDark = Theme.of(ctx).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F0),
+        borderRadius: BorderRadius.circular(8)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: TextStyle(fontSize: 9, color: Theme.of(ctx).colorScheme.onSurface.withOpacity(0.5))),
+        const SizedBox(height: 2),
+        Text(val, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF1D9E75))),
+      ]));
+  });
+}
+
+// ─── ABA RESUMO ───────────────────────────────────────────────────────────────
+
+class ResumoTab extends StatefulWidget {
+  final List<Map<String, dynamic>> dias;
+  const ResumoTab({super.key, required this.dias});
+  @override State<ResumoTab> createState() => _ResumoTabState();
+}
+
+class _ResumoTabState extends State<ResumoTab> {
+  DateTime? _inicio;
+  DateTime? _fim;
+  DateTime _calMes = DateTime.now();
+  bool _showCal = false;
+  String _quickSel = '30';
+  // para seleção de range no calendário
+  DateTime? _tapInicio;
+
+  @override
+  void initState() { super.initState(); _aplicarQuick('30'); }
+
+  void _aplicarQuick(String q) {
+    final now = DateTime.now();
+    setState(() {
+      _quickSel = q;
+      _tapInicio = null;
+      _fim = now;
+      if (q == 'hoje') { _inicio = DateTime(now.year, now.month, now.day); }
+      else if (q == 'mes') { _inicio = DateTime(now.year, now.month, 1); }
+      else if (q == 'TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                      Text('${historico.length} viagens · ${fmt((d['total'] as num).toDouble())}',
+                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                    ])),
+                  ]),
+                ),
+                Container(height: 0.5, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12)),
+                Expanded(child: ListView.builder(
+                  controller: ctrl,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: historico.length,
+                  itemBuilder: (_, i) {
+                    final v = historico[i] as Map;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(color: const Color(0xFF9FE1CB), borderRadius: BorderRadius.circular(99)),
+                          child: Text('#${i + 1}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF085041))),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(v['hora']?.toString() ?? '', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                        const Spacer(),
+                        Text('+${fmt((v['val'] as num).toDouble())}',
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF1D9E75))),
+                      ]),
+                    );
+                  },
+                )),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _confirmarExcluir(BuildContext context, int i, Map d) {
+    showDialog(context: context, builder: (_) => AlertDialog(
+      title: const Text('Excluir dia?'),
+      content: Text('O registro de ${d['data']} será apagado.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        TextButton(onPressed: () { widget.onDeleteDia(i); Navigator.pop(context); },
+            child: const Text('Excluir', stTextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF085041))),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(v['hora']?.toString() ?? '', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                        const Spacer(),
+                        Text('+${fmt((v['val'] as num).toDouble())}',
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF1D9E75))),
+                      ]),
+                    );
+                  },
+                )),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _confirmarExcluir(BuildContext context, int i, Map d) {
+    showDialog(context: context, builder: (_) => AlertDialog(
+      title: const Text('Excluir dia?'),
+      content: Text('O registro de ${d['data']} será apagado.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        TextButton(onPressed: () { widget.onDeleteDia(i); Navigator.pop(context); },
+            child: Text('Excluir', style: TextStyle(color: Colors.red))),
+      ],
+    ));
+  }
+
+  Widget _mini(String label, String val, ColorText('Excluir', style: TextStyle(color: Colors.red))),
       ],
     ));
   }
@@ -1102,12 +1295,12 @@ class _ResumoTabState extends State<ResumoTab> {
               border: Border.all(color: _showCal ? const Color(0xFF5DCAA5) : (isDarkR ? Colors.white12 : Colors.black12), width: 0.5),
             ),
             child: Row(children: [
-              Icon(Icons.calendar_month_outlined, size: 16, color: _showCal ? const Color(0xFF085041) : Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+              Icon(Icons.calendar_month_outlined, size: 16, color: _showCal ? Color(0xFF085041) : Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
               const SizedBox(width: 8),
               Expanded(child: Text(
                 _inicio != null && _fim != null ? '${_fmtDate(_inicio!)}  →  ${_fmtDate(_fim!)}' : 'Selecionar período',
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
-                    color: _showCal ? const Color(0xFF085041) : Theme.of(context).colorScheme.onSurface),
+                    color: _showCal ? Color(0xFF085041) : Theme.of(context).colorScheme.onSurface),
               )),
               Icon(_showCal ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 18, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38)),
             ]),
@@ -1152,12 +1345,12 @@ class _ResumoTabState extends State<ResumoTab> {
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 GestureDetector(
                   onTap: () => setState(() => _calMes = DateTime(_calMes.year, _calMes.month - 1)),
-                  child: const Padding(padding: EdgeInsets.all(6), child: Icon(Icons.chevron_left, size: 22, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)))),
+                  child: Padding(padding: EdgeInsets.all(6), child: Icon(Icons.chevron_left, size: 22, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)))),
                 Text('${meses[_calMes.month - 1]} ${_calMes.year}',
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                 GestureDetector(
                   onTap: () => setState(() => _calMes = DateTime(_calMes.year, _calMes.month + 1)),
-                  child: const Padding(padding: EdgeInsets.all(6), child: Icon(Icons.chevron_right, size: 22, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)))),
+                  child: Padding(padding: EdgeInsets.all(6), child: Icon(Icons.chevron_right, size: 22, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)))),
               ]),
               const SizedBox(height: 10),
               // Nomes dos dias
