@@ -1408,13 +1408,15 @@ class _ResumoTabState extends State<ResumoTab> {
         ],
 
         // Resultados
-        Builder(builder: (_) {
+        Builder(builder: (bCtx) {
           if (dias.isEmpty) {
             return Container(padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12), width: 0.5)),
-              child: const Center(child: Text('Nenhum dia no período selecionado.',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38)))));
+              decoration: BoxDecoration(
+                color: Theme.of(bCtx).colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Theme.of(bCtx).colorScheme.onSurface.withOpacity(0.12), width: 0.5)),
+              child: Center(child: Text('Nenhum dia no período selecionado.',
+                  style: TextStyle(color: Theme.of(bCtx).colorScheme.onSurface.withOpacity(0.38)))));
           }
           final totalGanho = dias.fold<double>(0, (s, d) => s + (d['total'] as num).toDouble());
           final totalKm = dias.fold<double>(0, (s, d) => s + (d['km'] as num? ?? 0).toDouble());
