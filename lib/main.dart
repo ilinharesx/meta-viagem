@@ -389,7 +389,7 @@ class _HojeTabState extends State<HojeTab> {
         // Barra de progresso
         _card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('Meta: ${_fmt(_meta)}', style: const TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+            Text('Meta: ${_fmt(_meta)}', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
             Text(_falta <= 0 ? 'Meta atingida!' : 'falta ${_fmt(_falta)}',
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
                     color: _falta <= 0 ? const Color(0xFF1D9E75) : const Color(0xFF993C1D))),
@@ -402,7 +402,7 @@ class _HojeTabState extends State<HojeTab> {
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text('${(_pct * 100).toStringAsFixed(0)}%',
                 style: const TextStyle(fontSize: 11, color: Color(0xFF1D9E75), fontWeight: FontWeight.w500)),
-            Text(_fmt(_meta), style: const TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+            Text(_fmt(_meta), style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
           ]),
         ])),
         const SizedBox(height: 12),
@@ -454,7 +454,7 @@ class _HojeTabState extends State<HojeTab> {
                     color: _ehPromocao ? const Color(0xFFBA7517) : Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
                 const SizedBox(width: 6),
                 Text('(não conta no saldo)',
-                  style: const TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
+                  style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
               ]),
             ),
             const SizedBox(height: 8),
@@ -480,9 +480,9 @@ class _HojeTabState extends State<HojeTab> {
                   const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF1D9E75)),
                   const SizedBox(width: 8),
                   Text(_fmtData(_dataTotalSelecionada),
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface)),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface)),
                   const Spacer(),
-                  const Text('alterar', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
+                  Text('alterar', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
                 ]),
               ),
             ),
@@ -495,7 +495,7 @@ class _HojeTabState extends State<HojeTab> {
             const SizedBox(height: 8),
             _inputField(_metaTotalCtrl, 'Meta do dia (R\$)', '500'),
             const SizedBox(height: 6),
-            const Text('os dados do expediente serão preenchidos na seção abaixo',
+            Text('os dados do expediente serão preenchidos na seção abaixo',
                 style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
           ],
         ])),
@@ -503,11 +503,11 @@ class _HojeTabState extends State<HojeTab> {
 
         // Encerrar o dia
         _card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Encerrar o dia', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+          Text('Encerrar o dia', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
           const SizedBox(height: 10),
           Container(height: 0.5, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12)),
           const SizedBox(height: 10),
-          const Text('Dados do expediente', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+          Text('Dados do expediente', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
           const SizedBox(height: 8),
           Row(children: [
             Expanded(child: _inputField(_kmCtrl, 'Km rodados', 'ex: 187')),
@@ -548,9 +548,9 @@ class _HojeTabState extends State<HojeTab> {
               final normais = _viagens.where((v) => v['promo'] != true).length;
               final promos = _viagens.where((v) => v['promo'] == true).length;
               return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                const Text('Viagens de hoje', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                Text('Viagens de hoje', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
                 Text('$normais viagens${promos > 0 ? ' · $promos promo' : ''} · ${_fmt(_media)}/viag.',
-                    style: const TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
+                    style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
               ]);
             }),
             const SizedBox(height: 10),
@@ -570,7 +570,7 @@ class _HojeTabState extends State<HojeTab> {
                         decoration: BoxDecoration(color: const Color(0xFF9FE1CB), borderRadius: BorderRadius.circular(99)),
                         child: Text('#$numNormal', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF085041)))),
                   const SizedBox(width: 8),
-                  Text(v['hora'] ?? '', style: const TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
+                  Text(v['hora'] ?? '', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
                   const Spacer(),
                   Text('+${_fmt((v['val'] as num).toDouble())}',
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
@@ -623,7 +623,7 @@ class _HojeTabState extends State<HojeTab> {
 
   Widget _inputField(TextEditingController ctrl, String label, String hint) =>
     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+      Text(label, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
       const SizedBox(height: 4),
       TextField(controller: ctrl,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -754,7 +754,7 @@ class _DiarioTabState extends State<DiarioTab> {
             decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12), width: 0.5)),
             child: Center(child: Text('Nenhum registro em ${_fmtDate(_filtroData!)}.',
-                style: const TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38)))))
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38)))))
         else
         ...dias.asMap().entries.map((e) {
           final i = e.key; final d = e.value;
@@ -796,7 +796,7 @@ class _DiarioTabState extends State<DiarioTab> {
                           const Icon(Icons.expand_more, size: 16, color: Color(0xFF1D9E75)),
                         ],
                       ]),
-                      Text(d['semana'] ?? '', style: const TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
+                      Text(d['semana'] ?? '', style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
                     ]),
                     Row(children: [
                       Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
@@ -817,32 +817,32 @@ class _DiarioTabState extends State<DiarioTab> {
                   Container(height: 0.5, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12)),
                   const SizedBox(height: 8),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text('total bruto', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                    Text('total bruto', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
                     Text(_fmt(total), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
                         color: bateu ? const Color(0xFF1D9E75) : const Color(0xFF993C1D))),
                   ]),
                   if (abast > 0) ...[
                     const SizedBox(height: 3),
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      const Text('abastecimento', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                      Text('abastecimento', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
                       Text('-${_fmt(abast)}', style: const TextStyle(fontSize: 12, color: Color(0xFF993C1D))),
                     ]),
                     const SizedBox(height: 3),
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      const Text('líquido', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                      Text('líquido', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
                       Text(_fmt(liquido), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF185FA5))),
                     ]),
                   ],
                   const SizedBox(height: 3),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text('meta do dia', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
-                    Text(_fmt(meta), style: const TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface)),
+                    Text('meta do dia', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                    Text(_fmt(meta), style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface)),
                   ]),
                   const SizedBox(height: 3),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text('viagens · km · horas', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                    Text('viagens · km · horas', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
                     Text('$viagens${km > 0 ? ' · ${km.toStringAsFixed(0)}km' : ''}${horas > 0 ? ' · ${_fmtH(horas)}' : ''}',
-                        style: const TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface)),
+                        style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface)),
                   ]),
                   if (km > 0 || horas > 0) ...[
                     const SizedBox(height: 10),
@@ -862,7 +862,7 @@ class _DiarioTabState extends State<DiarioTab> {
                     Text('${(pctDia * 100).toStringAsFixed(0)}%',
                         style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500,
                             color: bateu ? const Color(0xFF1D9E75) : const Color(0xFF993C1D))),
-                    Text(_fmt(meta), style: const TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
+                    Text(_fmt(meta), style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38))),
                   ]),
                   if (temHistorico) ...[
                     const SizedBox(height: 8),
@@ -916,7 +916,7 @@ class _DiarioTabState extends State<DiarioTab> {
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text('${d['data']} · ${d['semana']}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                       Text('${historico.length} viagens · ${fmt((d['total'] as num).toDouble())}',
-                          style: const TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
                     ])),
                   ]),
                 ),
@@ -936,7 +936,7 @@ class _DiarioTabState extends State<DiarioTab> {
                           child: Text('#${i + 1}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF085041))),
                         ),
                         const SizedBox(width: 10),
-                        Text(v['hora']?.toString() ?? '', style: const TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                        Text(v['hora']?.toString() ?? '', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
                         const Spacer(),
                         Text('+${fmt((v['val'] as num).toDouble())}',
                             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF1D9E75))),
@@ -1162,7 +1162,7 @@ class _ResumoTabState extends State<ResumoTab> {
               const SizedBox(height: 10),
               // Nomes dos dias
               Row(children: ['D','S','T','Q','Q','S','S'].map((d) => Expanded(
-                child: Center(child: Text(d, style: const TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38), fontWeight: FontWeight.w500))))).toList()),
+                child: Center(child: Text(d, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38), fontWeight: FontWeight.w500))))).toList()),
               const SizedBox(height: 4),
               // Grid
               Builder(builder: (_) {
@@ -1205,10 +1205,10 @@ class _ResumoTabState extends State<ResumoTab> {
               const SizedBox(height: 8),
               if (_tapInicio != null)
                 Text('Toque no dia final do período',
-                    style: const TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38), fontStyle: FontStyle.italic))
+                    style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38), fontStyle: FontStyle.italic))
               else
                 Text('Toque em dois dias para selecionar o período',
-                    style: const TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38), fontStyle: FontStyle.italic)),
+                    style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38), fontStyle: FontStyle.italic)),
             ]),
           ),
           const SizedBox(height: 8),
@@ -1245,7 +1245,7 @@ class _ResumoTabState extends State<ResumoTab> {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: isDark ? Colors.white12 : Colors.black12, width: 0.5)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Total ganho (${dias.length} dias)', style: const TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                Text('Total ganho (${dias.length} dias)', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
                 const SizedBox(height: 4),
                 Text(_fmt(totalGanho), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w500, color: Color(0xFF1D9E75))),
                 if (totalAbast > 0) ...[
@@ -1278,7 +1278,7 @@ class _ResumoTabState extends State<ResumoTab> {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: isDark ? Colors.white12 : Colors.black12, width: 0.5)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Médias do período', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                Text('Médias do período', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
                 const SizedBox(height: 12),
                 _mediaRow('Ganho por dia', _fmt(mediaDia)),
                 _mediaRow('Ganho por viagem', _fmt(mediaVia)),
@@ -1311,7 +1311,7 @@ class _ResumoTabState extends State<ResumoTab> {
   Widget _mediaRow(String label, String val) => Padding(
     padding: const EdgeInsets.only(bottom: 10),
     child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      Text(label, style: const TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
-      Text(val, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface)),
+      Text(label, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+      Text(val, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface)),
     ]));
 }
