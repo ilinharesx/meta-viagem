@@ -333,6 +333,7 @@ class _HojeTabState extends State<HojeTab> {
   late double _atual, _meta, _abast;
   late List<Map<String, dynamic>> _viagens;
   bool _modoTotal = false, _ehPromo = false;
+  int _horasInt = 0, _minutosInt = 0; // time picker state
   String _plataforma = 'Uber'; // 'Uber', '99', 'Particular'
   final _vCtrl = TextEditingController();
   final _mCtrl = TextEditingController();
@@ -340,7 +341,6 @@ class _HojeTabState extends State<HojeTab> {
   final _nViaCtrl = TextEditingController();
   final _mTotalCtrl = TextEditingController();
   final _kmCtrl = TextEditingController();
-  final _hCtrl = TextEditingController();
   final _abastCtrl = TextEditingController();
   DateTime _dataTotal = DateTime.now();
 
@@ -391,7 +391,7 @@ class _HojeTabState extends State<HojeTab> {
   void _encerrarDia() {
     final km = double.tryParse(_kmCtrl.text.replaceAll(',', '.')) ?? 0;
     final abv = double.tryParse(_abastCtrl.text.replaceAll(',', '.')) ?? 0;
-    final h = _parseH(_hCtrl.text.trim());
+    final h = _horasInt + _minutosInt / 60.0;
 
     if (_modoTotal) {
       final total = double.tryParse(_totalCtrl.text.replaceAll(',', '.')); 
@@ -405,7 +405,7 @@ class _HojeTabState extends State<HojeTab> {
         widget.onEncerrarDia({'data': fmtDate(dt), 'dataISO': dt.toIso8601String(), 'semana': diaSemana(dt.weekday),
           'total': total, 'meta': _meta, 'viagens': nv, 'km': km, 'horas': h, 'abastecimento': abv,
           'liquido': total - abv, 'bateu': total >= _meta, 'modoTotal': true});
-        _totalCtrl.clear(); _nViaCtrl.clear(); _mTotalCtrl.clear(); _kmCtrl.clear(); _hCtrl.clear(); _abastCtrl.clear();
+        _totalCtrl.clear(); _nViaCtrl.clear(); _mTotalCtrl.clear(); _kmCtrl.clear(); _abastCtrl.clear(); setState(() { _horasInt = 0; _minutosInt = 0; });
         _snack('Dia ${fmtDate(dt)} salvo!');
       });
     } else {
@@ -417,18 +417,13 @@ class _HojeTabState extends State<HojeTab> {
           'total': _atual, 'meta': _meta, 'viagens': _viagens.length, 'km': km, 'horas': h,
           'abastecimento': ta, 'liquido': _atual - ta, 'bateu': _atual >= _meta, 'modoTotal': false,
           'historicoViagens': List.from(_viagens)});
-        _kmCtrl.clear(); _hCtrl.clear(); _abastCtrl.clear();
+        _kmCtrl.clear(); _abastCtrl.clear(); setState(() { _horasInt = 0; _minutosInt = 0; });
         _snack('Dia encerrado e salvo!');
       });
     }
   }
 
-  double _parseH(String s) {
-    if (s.isEmpty) return 0;
-    final c = s.replaceAll('h', ':').replaceAll(',', '.');
-    if (c.contains(':')) { final p = c.split(':'); return (double.tryParse(p[0]) ?? 0) + (double.tryParse(p.length > 1 ? p[1] : '0') ?? 0) / 60; }
-    return double.tryParse(c) ?? 0;
-  }
+
 
   void _snack(String msg) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), duration: const Duration(seconds: 3)));
 
@@ -611,7 +606,44 @@ class _HojeTabState extends State<HojeTab> {
           Row(children: [
             Expanded(child: AppInput(ctrl: _kmCtrl, label: 'KM RODADOS', hint: 'ex: 187')),
             const SizedBox(width: 10),
-            Expanded(child: AppInput(ctrl: _hCtrl, label: 'HORAS TRABALHADAS', hint: 'ex: 8h30')),
+            Expanded(child: Builder(builder: (ctx) {
+              final dark = darkModeNotifier.value;
+              final hLabel = _horasInt == 0 && _minutosInt == 0
+                ? 'Toque para definir'
+                : '${_horasInt.toString().padLeft(2,'0')}h${_minutosInt.toString().padLeft(2,'0')}';
+              return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('HORAS TRABALHADAS', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600,
+                    letterSpacing: 0.8, color: dark ? T.textSecondary : T.lTextMuted)),
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: () async {
+                    final picked = await showTimePicker(
+                      context: ctx,
+                      initialTime: TimeOfDay(hour: _horasInt, minute: _minutosInt),
+                      builder: (ctx2, child) => MediaQuery(
+                        data: MediaQuery.of(ctx2).copyWith(alwaysUse24HourFormat: true),
+                        child: child!),
+                    );
+                    if (picked != null) setState(() { _horasInt = picked.hour; _minutosInt = picked.minute; });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                    decoration: BoxDecoration(
+                      color: dark ? T.bgInput : const Color(0xFFF5F5F0),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: dark ? T.border : T.lBorder)),
+                    child: Row(children: [
+                      Icon(Icons.access_time, size: 16, color: dark ? T.accent : T.lAccent),
+                      const SizedBox(width: 8),
+                      Text(hLabel, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
+                          color: (_horasInt == 0 && _minutosInt == 0)
+                            ? (dark ? T.textDim : T.lTextDim)
+                            : (dark ? T.textPrimary : T.lText))),
+                    ]),
+                  ),
+                ),
+              ]);
+            })),
           ]),
           const SizedBox(height: 10),
           SizedBox(width: (MediaQuery.of(context).size.width - 52) / 2,
@@ -983,14 +1015,20 @@ class _DiarioTabState extends State<DiarioTab> {
                     final isPromo = v['promo'] == true;
                     return Padding(padding: const EdgeInsets.only(bottom: 10),
                       child: Row(children: [
-                        Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: isPromo ? T.amber.withOpacity(0.15) : (dark ? T.accentDim.withOpacity(0.15) : T.lAccent.withOpacity(0.1)),
-                            borderRadius: BorderRadius.circular(99),
-                            border: Border.all(color: isPromo ? T.amber.withOpacity(0.4) : (dark ? T.accentDim : T.lAccent).withOpacity(0.3))),
-                          child: Text(isPromo ? 'promo' : '#${i + 1}',
-                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
-                                  color: isPromo ? T.amber : (dark ? T.accent : T.lAccent)))),
+                        Builder(builder: (_) {
+                          final plat = v['plat'] as String? ?? 'Uber';
+                          Color bg; Color fg;
+                          if (isPromo) { bg = T.amber.withOpacity(0.2); fg = T.amber; }
+                          else if (plat == '99') { bg = T.p99; fg = T.p99Txt; }
+                          else if (plat == 'Particular') { bg = T.partic.withOpacity(0.85); fg = T.particTxt; }
+                          else { bg = const Color(0xFF444446); fg = Colors.white; }
+                          final num = i + 1;
+                          final label = isPromo ? 'promo' : '#$num $plat';
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                            decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(99)),
+                            child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: fg)));
+                        })
                         const SizedBox(width: 10),
                         Text(v['hora']?.toString() ?? '', style: TextStyle(fontSize: 12, color: dark ? T.textSecondary : T.lTextMuted)),
                         const Spacer(),
