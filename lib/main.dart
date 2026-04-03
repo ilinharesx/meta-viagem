@@ -13,30 +13,38 @@ final ValueNotifier<bool> darkModeNotifier = ValueNotifier(true);
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 class T {
   // Dark green theme
-  static const bgDark       = Color(0xFF0A1A0F);
-  static const bgCard       = Color(0xFF122418);
-  static const bgCardLight  = Color(0xFF1A3020);
-  static const bgInput      = Color(0xFF0F1E14);
+  static const bgDark       = Color(0xFF1C1C1E);
+  static const bgCard       = Color(0xFF2C2C2E);
+  static const bgCardLight  = Color(0xFF3A3A3C);
+  static const bgInput      = Color(0xFF1C1C1E);
   static const accent       = Color(0xFF00E676);
   static const accentDim    = Color(0xFF1D9E75);
   static const red          = Color(0xFFFF5252);
   static const amber        = Color(0xFFFFB300);
   static const blue         = Color(0xFF40C4FF);
-  static const border       = Color(0xFF1E3A28);
-  static const borderBright = Color(0xFF2E5A38);
+  static const border       = Color(0xFF3A3A3C);
+  static const borderBright = Color(0xFF4A4A4C);
   static const textPrimary  = Color(0xFFE8F5E9);
   static const textSecondary= Color(0xFF81C784);
   static const textMuted    = Color(0xFF4CAF50);
-  static const textDim      = Color(0xFF2E7D32);
+  static const textDim      = Color(0xFF6B6B6E);
 
   // Light theme
-  static const lBg          = Color(0xFFF5F5F0);
-  static const lCard        = Color(0xFFFFFFFF);
-  static const lCardAlt     = Color(0xFFEEEEEA);
-  static const lBorder      = Color(0xFFE0E0E0);
+  static const lBg          = Color(0xFFFFFFFF);
+  static const lCard        = Color(0xFFF8F8FA);
+  static const lCardAlt     = Color(0xFFF0F0F5);
+  static const lBorder      = Color(0xFFE5E5EA);
   static const lText        = Color(0xFF1A1A1A);
   static const lTextMuted   = Color(0xFF666666);
   static const lTextDim     = Color(0xFF999999);
+
+  // Platform colors
+  static const uber   = Color(0xFF1C1C1E);   // dark
+  static const p99    = Color(0xFFFFCC00);   // yellow
+  static const partic = Color(0xFF2979FF);   // blue
+  static const uberTxt   = Color(0xFFFFFFFF);
+  static const p99Txt    = Color(0xFF1A1A1A);
+  static const particTxt = Color(0xFFFFFFFF);
   static const lAccent      = Color(0xFF1D9E75);
 }
 
@@ -75,9 +83,12 @@ class AppCard extends StatelessWidget {
     return Container(
       padding: padding ?? const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: dark ? T.bgCard : T.lCard,
+        color: dark ? T.bgCard : const Color(0xFFFAFAFC),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: dark ? T.border : T.lBorder, width: 1),
+        border: Border.all(color: dark ? T.border : const Color(0xFFE8E8F0), width: 1),
+        boxShadow: dark ? null : [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 2)),
+        ],
       ),
       child: child,
     );
@@ -227,7 +238,7 @@ class _RootPageState extends State<RootPage> {
   @override
   Widget build(BuildContext context) {
     final dark = darkModeNotifier.value;
-    final tabs = ['Hoje', 'Diário', 'Resumo'];
+    final tabs = ['Registros', 'Histórico', 'Resumo'];
     return Scaffold(
       backgroundColor: dark ? T.bgDark : T.lBg,
       appBar: AppBar(
@@ -322,6 +333,7 @@ class _HojeTabState extends State<HojeTab> {
   late double _atual, _meta, _abast;
   late List<Map<String, dynamic>> _viagens;
   bool _modoTotal = false, _ehPromo = false;
+  String _plataforma = 'Uber'; // 'Uber', '99', 'Particular'
   final _vCtrl = TextEditingController();
   final _mCtrl = TextEditingController();
   final _totalCtrl = TextEditingController();
@@ -353,7 +365,7 @@ class _HojeTabState extends State<HojeTab> {
   void _addViagem() {
     final val = double.tryParse(_vCtrl.text.replaceAll(',', '.'));
     if (val == null || val <= 0) return;
-    setState(() { _atual += val; _viagens.add({'val': val, 'hora': TimeOfDay.now().format(context), 'promo': _ehPromo}); _ehPromo = false; });
+    setState(() { _atual += val; _viagens.add({'val': val, 'hora': TimeOfDay.now().format(context), 'promo': _ehPromo, 'plat': _plataforma}); _ehPromo = false; });
     _vCtrl.clear(); _notify();
   }
 
@@ -499,6 +511,36 @@ class _HojeTabState extends State<HojeTab> {
               const SizedBox(width: 10),
               Expanded(child: AppInput(ctrl: _mCtrl, label: 'META (R\$)', hint: '500')),
             ]),
+            const SizedBox(height: 12),
+            // Platform selector
+            Builder(builder: (ctx) {
+              final dark = darkModeNotifier.value;
+              final platforms = ['Uber', '99', 'Particular'];
+              return Container(
+                decoration: BoxDecoration(
+                  color: dark ? T.bgInput : const Color(0xFFF0F0F5),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: dark ? T.border : T.lBorder)),
+                padding: const EdgeInsets.all(6),
+                child: Row(children: platforms.map((p) {
+                  final sel = _plataforma == p;
+                  Color bg, fg;
+                  if (p == 'Uber') { bg = T.uber; fg = T.uberTxt; }
+                  else if (p == '99') { bg = T.p99; fg = T.p99Txt; }
+                  else { bg = T.partic; fg = T.particTxt; }
+                  return Expanded(child: GestureDetector(
+                    onTap: () => setState(() => _plataforma = p),
+                    child: AnimatedContainer(duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(vertical: 9),
+                      decoration: BoxDecoration(
+                        color: sel ? bg : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8)),
+                      child: Text(p, textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700,
+                              color: sel ? fg : (dark ? T.textSecondary : T.lTextMuted))))));
+                }).toList()),
+              );
+            }),
             const SizedBox(height: 12),
             GestureDetector(
               onTap: () => setState(() => _ehPromo = !_ehPromo),
@@ -723,6 +765,35 @@ class _DiarioTabState extends State<DiarioTab> {
                 child: Icon(Icons.close, size: 16, color: dark ? T.textSecondary : T.lTextMuted))),
           ],
         ]),
+        const SizedBox(height: 10),
+        // Limpar histórico completo
+        GestureDetector(
+          onTap: () {
+            showDialog(context: context, builder: (_) => AlertDialog(
+              title: const Text('Limpar histórico?'),
+              content: const Text('Todos os dias registrados serão apagados permanentemente.'),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+                TextButton(onPressed: () {
+                  for (var i = widget.dias.length - 1; i >= 0; i--) widget.onDeleteDia(0);
+                  Navigator.pop(context);
+                }, child: const Text('Limpar tudo', style: TextStyle(color: Colors.red))),
+              ],
+            ));
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: T.red.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: T.red.withOpacity(0.25))),
+            child: Row(children: [
+              Icon(Icons.delete_outline, size: 16, color: T.red),
+              const SizedBox(width: 8),
+              Text('Limpar todo o histórico', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: T.red)),
+            ]),
+          ),
+        ),
         const SizedBox(height: 12),
 
         if (dias.isEmpty)
