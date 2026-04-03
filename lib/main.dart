@@ -1028,7 +1028,7 @@ class _DiarioTabState extends State<DiarioTab> {
                             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                             decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(99)),
                             child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: fg)));
-                        })
+                        }),
                         const SizedBox(width: 10),
                         Text(v['hora']?.toString() ?? '', style: TextStyle(fontSize: 12, color: dark ? T.textSecondary : T.lTextMuted)),
                         const Spacer(),
