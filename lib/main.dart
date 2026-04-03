@@ -39,7 +39,7 @@ class T {
   static const lTextDim     = Color(0xFF999999);
 
   // Platform colors
-  static const uber   = Color(0xFF1C1C1E);   // dark
+  static const uber   = Color(0xFF444446);   // dark gray, visible on dark bg
   static const p99    = Color(0xFFFFCC00);   // yellow
   static const partic = Color(0xFF2979FF);   // blue
   static const uberTxt   = Color(0xFFFFFFFF);
@@ -645,16 +645,19 @@ class _HojeTabState extends State<HojeTab> {
               final numN = isPromo ? 0 : _viagens.sublist(0, orig + 1).where((x) => x['promo'] != true).length;
               return Padding(padding: const EdgeInsets.only(bottom: 8),
                 child: Row(children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: isPromo ? T.amber.withOpacity(0.15) : (dark ? T.accentDim.withOpacity(0.2) : T.lAccent.withOpacity(0.1)),
-                      borderRadius: BorderRadius.circular(99),
-                      border: Border.all(color: isPromo ? T.amber.withOpacity(0.4) : (dark ? T.accentDim : T.lAccent).withOpacity(0.3)),
-                    ),
-                    child: Text(isPromo ? 'promo' : '#$numN',
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
-                            color: isPromo ? T.amber : (dark ? T.accent : T.lAccent)))),
+                  Builder(builder: (_) {
+                    final plat = v['plat'] as String? ?? 'Uber';
+                    Color bg; Color fg;
+                    if (isPromo) { bg = T.amber.withOpacity(0.2); fg = T.amber; }
+                    else if (plat == '99') { bg = T.p99; fg = T.p99Txt; }
+                    else if (plat == 'Particular') { bg = T.partic.withOpacity(0.85); fg = T.particTxt; }
+                    else { bg = const Color(0xFF444446); fg = Colors.white; }
+                    final label = isPromo ? 'promo' : '#$numN $plat';
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(99)),
+                      child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: fg)));
+                  }),
                   const SizedBox(width: 8),
                   Text(v['hora'] ?? '', style: TextStyle(fontSize: 11, color: dark ? T.textSecondary : T.lTextMuted)),
                   const Spacer(),
