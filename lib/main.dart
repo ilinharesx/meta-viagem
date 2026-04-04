@@ -414,7 +414,7 @@ class _HojeTabState extends State<HojeTab> {
       final now = DateTime.now();
       _confirm('Encerrar o dia?', 'Salvar ${fmtMoney(_atual)} em ${_viagens.length} viagens?', () {
         widget.onEncerrarDia({'data': fmtDate(now), 'dataISO': now.toIso8601String(), 'semana': diaSemana(now.weekday),
-          'total': _atual, 'meta': _meta, 'viagens': _viagens.length, 'km': km, 'horas': h,
+          'total': _atual, 'meta': _meta, 'viagens': _viagens.where((v) => v['promo'] != true).length, 'km': km, 'horas': h,
           'abastecimento': ta, 'liquido': _atual - ta, 'bateu': _atual >= _meta, 'modoTotal': false,
           'historicoViagens': List.from(_viagens)});
         _kmCtrl.clear(); _abastCtrl.clear(); setState(() { _horasInt = 0; _minutosInt = 0; });
